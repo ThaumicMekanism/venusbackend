@@ -1,5 +1,6 @@
 package venusbackend.assembler
 /* ktlint-disable no-wildcard-imports */
+import venus.InitInstructions
 import venusbackend.assembler.pseudos.checkArgsLength
 import venus.Renderer
 import venusbackend.riscv.*
@@ -23,6 +24,7 @@ object Assembler {
      * @see venus.simulator.Simulator
      */
     fun assemble(text: String, name: String = "anonymous"): AssemblerOutput {
+        InitInstructions()
         var (passOneProg, talInstructions, passOneErrors) = AssemblerPassOne(text, name).run()
 
         /* This will force pc to be word aligned. Removed it because I guess you could custom it.
