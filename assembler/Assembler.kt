@@ -1,6 +1,6 @@
 package venusbackend.assembler
 /* ktlint-disable no-wildcard-imports */
-import venus.InitInstructions
+import venusbackend.riscv.InitInstructions
 import venusbackend.assembler.pseudos.checkArgsLength
 import venus.Renderer
 import venusbackend.riscv.*
