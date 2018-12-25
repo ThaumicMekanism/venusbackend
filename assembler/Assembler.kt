@@ -5,6 +5,7 @@ import venusbackend.assembler.pseudos.checkArgsLength
 import venus.Renderer
 import venusbackend.riscv.*
 import venusbackend.riscv.insts.InstructionNotFoundError
+import venusbackend.riscv.insts.InstructionSize
 import venusbackend.riscv.insts.dsl.Instruction
 import venusbackend.riscv.insts.dsl.getImmWarning
 import venusbackend.riscv.insts.dsl.relocators.Relocator
@@ -23,6 +24,7 @@ object Assembler {
      * @see venus.linker.Linker
      * @see venus.simulator.Simulator
      */
+    var defaultInstructionSize: InstructionSize = InstructionSize.B32
     fun assemble(text: String, name: String = "anonymous"): AssemblerOutput {
         InitInstructions()
         var (passOneProg, talInstructions, passOneErrors) = AssemblerPassOne(text, name).run()
@@ -93,6 +95,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     /** List of all errors encountered */
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
+    private var currentInstructionSize: InstructionSize = Assembler.defaultInstructionSize
 
     fun run(): PassOneOutput {
         doPassOne()
@@ -227,7 +230,22 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     private fun parseAssemblerDirective(directive: String, args: LineTokens, line: String) {
         when (directive) {
             ".data" -> inTextSegment = false
-            ".text" -> inTextSegment = true
+            ".text" -> {
+                inTextSegment = true
+                try {
+                    checkArgsLength(args, 0)
+                    currentInstructionSize = Assembler.defaultInstructionSize
+                } catch (e: AssemblerError) {
+                    try {
+                        checkArgsLength(args, 1)
+                    } catch (ee: AssemblerError) {
+                        throw AssemblerError(".text takes in zero or one argument(s) to specify encoding!")
+                    }
+                    val instwidth = userStringToInt(args[0])
+                    currentInstructionSize = InstructionSize.getInstSize(instwidth)
+                }
+
+            }
 
             ".data_start" -> {
                 if (!allow_custom_memory_setments) {
