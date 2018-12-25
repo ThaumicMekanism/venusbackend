@@ -26,7 +26,7 @@ internal fun regNameToNumber(reg: String, integer: Boolean = true): Int {
         }
         throw AssemblerError("register $reg not recognized")
     }
-    if (reg.matches("f\\d{1,2}")) {
+    if (reg.matches(Regex("f\\d{1,2}"))) {
         val ret = reg.drop(1).toInt()
         if (ret in 0..31) {
             if (integer) throw AssemblerError("Register $reg is not an integer register")

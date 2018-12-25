@@ -207,7 +207,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     errors.add(AssemblerError(currentLineNumber, e))
                 }
             } catch (e: NumberFormatException) {
-                if (c.startsWith("0x") || c.startsWith("0b") || c.matches("\\d+")) {
+                if (c.startsWith("0x") || c.startsWith("0b") || c.matches(Regex("\\d+"))) {
                     errors.add(AssemblerError(currentLineNumber, e))
                 }
             }

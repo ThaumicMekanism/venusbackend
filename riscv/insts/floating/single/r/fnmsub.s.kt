@@ -3,7 +3,7 @@ package venusbackend.riscv.insts.floating.single.r
 import venusbackend.riscv.insts.dsl.floating.FR4TypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 
-val fnsubs = FR4TypeInstruction(
+val fnmsubs = FR4TypeInstruction(
         name = "fnmsub.s",
         opcode = 0b1001011,
         funct2 = 0b00,

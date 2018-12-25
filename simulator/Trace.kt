@@ -1,6 +1,9 @@
 package venusbackend.simulator
 
 import venusbackend.riscv.MachineCode
+import kotlin.math.log2
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
  * Created by Thaumic on 7/14/2018.
@@ -30,9 +33,9 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: IntArray
         if (this.ecallMsg == "exiting the venusbackend.simulator") {
             return "exiting the venusbackend.simulator\n"
         }
-        var f = format.replace("%output%", this.ecallMsg).replace("%inst%", vnumToBase(base, this.inst.toString().toInt(), 32, 10, true)).replace("%pc%", vnumToBase(base, this.getPC(), 32, 10, false)).replace("%line%", vnumToBase(base, this.line, 16, 10, false))
+        var f = format.replace("%output%", this.ecallMsg).replace("%inst%", numToBase(base, this.inst.toString().toInt(), 32, true)).replace("%pc%", numToBase(base, this.getPC(), 32, false)).replace("%line%", numToBase(base, this.line, 16, false))
         for (i in 0..(regs.size - 1)) {
-            f = f.replace("%" + i.toString() + "%", vnumToBase(base, this.regs[i], 32, 10, true))
+            f = f.replace("%" + i.toString() + "%", numToBase(base, this.regs[i], 32, true))
         }
         return f
     }
@@ -52,4 +55,44 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: IntArray
 /*
 * Takes in a base 10 integer and a base to convert it to and returns a string of what the number is.
 */
-external fun vnumToBase(curNumBase: Int, n: Int, length: Int, base: Int, signextend: Boolean): String
+fun numToBase(curNumBase: Int, n: Int, lengthNeeded: Int, signextend: Boolean): String {
+    val amount = ((2).toDouble()).pow(lengthNeeded.toDouble())
+    val length = getBaseLog(curNumBase.toDouble(), amount).roundToInt()
+    var num = if (signextend) {
+        (decimalToHexString(n).toLong(16)).toString(curNumBase)
+    } else {
+        n.toString(curNumBase)
+    }
+    if (length - num.length > 0) {
+        num = "0".repeat(length - num.length) + num
+    }
+    var snum = ""
+    if (curNumBase == 2) {
+        for (i in 0 until length) {
+            if (i % 4 == 0 && i != 0) {
+                snum += " "
+            }
+            snum += num[i]
+        }
+    } else {
+        snum = num
+    }
+    return snum
+}
+
+fun getBaseLog(x: Double, y: Double): Double {
+    return (log2(y) / log2(x))
+}
+
+fun decimalToHexString(number: Int): String {
+    var retval = number.toLong()
+    if (number < 0) {
+        retval = 0xFFFFFFFF + number + 1
+    }
+    val rv = retval.toString(16).toUpperCase()
+    return if (rv.length > 8) {
+        rv.substring(0 until 8)
+    } else {
+        rv
+    }
+}

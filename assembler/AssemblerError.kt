@@ -14,16 +14,16 @@ class AssemblerError : Throwable {
      */
     constructor(msg: String? = null) : super(msg)
 
-    constructor(msg: String? = null, errorType: Throwable) : super(msg) {
-        this.errorType = errorType
-    }
-
     /**
      * @param errorLine the line the error occurred on
      * @param e the original error to pass along
      */
     constructor(errorLine: Int, e: Throwable) : this(e.message) {
         line = errorLine
+    }
+
+    constructor(msg: String? = null, errorType: Throwable) : super(msg) {
+        this.errorType = errorType
     }
 
     override fun toString(): String {

@@ -4,7 +4,7 @@ import venusbackend.riscv.insts.dsl.floating.FtRTypeInstruction
 import kotlin.math.abs
 import kotlin.math.round
 
-val fcvtwus = FtRTypeInstruction(
+val fcvtwud = FtRTypeInstruction(
         name = "fcvt.wu.d",
         opcode = 0b1010011,
         funct7 = 0b1100001,

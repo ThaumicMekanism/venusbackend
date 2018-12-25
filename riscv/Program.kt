@@ -25,13 +25,6 @@ class Program(var name: String = "anonymous") {
     private val globalLabels = HashSet<String>()
     val imports = ArrayList<String>()
 
-    companion object {
-        fun parse(json: String): Program {
-            val program: Program = JSON.parse(json)
-            return program
-        }
-    }
-
     /**
      * Adds an instruction to the program, and increments the text size.
      *
