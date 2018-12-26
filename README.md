@@ -1,4 +1,4 @@
-# venusbackend
-This is the universal backend for the Venus project.
+# Venus Backend
+This is the Kotlin universal backend for the Venus project.
 
-[venus](https://github.com/ThaumicMekanism/venus)
+The current frontend of the project can be found here: [Venus](https://github.com/ThaumicMekanism/venus)
