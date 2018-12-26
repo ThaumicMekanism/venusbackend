@@ -17,7 +17,7 @@ import venusbackend.simulator.diffs.*
 class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = VirtualFileSystem("dummy"), var settings: SimulatorSettings = SimulatorSettings(), val simulatorID: Int = 0) {
     val state = SimulatorState()
     var maxpc = MemorySegments.TEXT_BEGIN
-    var cycles = 0
+    private var cycles = 0
     private val history = History()
     private val preInstruction = ArrayList<Diff>()
     private val postInstruction = ArrayList<Diff>()
@@ -53,6 +53,8 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
     }
 
     fun isDone(): Boolean = getPC() >= if (settings.ecallOnlyExit) MemorySegments.STATIC_BEGIN else maxpc
+
+    fun getCycles() : Int = cycles
 
     fun run() {
         while (!isDone() && cycles <= settings.maxSteps) {
