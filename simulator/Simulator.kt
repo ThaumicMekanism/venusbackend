@@ -54,7 +54,9 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
 
     fun isDone(): Boolean = getPC() >= if (settings.ecallOnlyExit) MemorySegments.STATIC_BEGIN else maxpc
 
-    fun getCycles() : Int = cycles
+    fun getCycles(): Int {
+        return cycles
+    }
 
     fun run() {
         while (!isDone() && cycles <= settings.maxSteps) {
