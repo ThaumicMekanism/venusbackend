@@ -29,9 +29,12 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
 
     init {
         for (inst in linkedProgram.prog.insts) {
-            /* TODO: abstract away instruction length */
-            state.mem.storeWord(maxpc, inst[InstructionField.ENTIRE])
-            maxpc += inst.length
+            var mcode = inst[InstructionField.ENTIRE]
+            for (i in 0 until inst.length) {
+                state.mem.storeByte(maxpc, mcode and 0xFF)
+                mcode = mcode shr 8
+                maxpc++
+            }
         }
 
         var dataOffset = MemorySegments.STATIC_BEGIN
@@ -68,9 +71,14 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         cycles++
         preInstruction.clear()
         postInstruction.clear()
-        /* TODO: abstract away instruction length */
         val mcode: MachineCode = getNextInstruction()
-        Instruction[mcode].impl32(mcode, this)
+        when (settings.registerWidth) {
+            16 -> { Instruction[mcode].impl16(mcode, this) }
+            32 -> { Instruction[mcode].impl32(mcode, this) }
+            64 -> { Instruction[mcode].impl64(mcode, this) }
+            128 -> { Instruction[mcode].impl128(mcode, this) }
+            else -> { throw SimulatorError("Unsupported register width!") }
+        }
         history.add(preInstruction)
         this.stdout += this.ecallMsg
         return postInstruction.toList()
@@ -223,6 +231,7 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         return breakpoints[idx]
     }
 
+    /* FIXME This is broken with larger and smaller instructions! */
     fun atBreakpoint() = breakpoints[(state.pc - MemorySegments.TEXT_BEGIN) / 4] || ebreak
 
     fun getPC() = state.pc
@@ -268,6 +277,17 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         state.cache.read(Address(addr, MemSize.WORD))
         postInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
         return this.loadWord(addr)
+    }
+
+    fun loadLong(addr: Int): Long = state.mem.loadLong(addr)
+    fun loadLongwCache(addr: Int): Long {
+        if (this.settings.alignedAddress && addr % MemSize.LONG.size != 0) {
+            throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not LONG aligned!")
+        }
+        preInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
+        state.cache.read(Address(addr, MemSize.LONG))
+        postInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
+        return this.loadLong(addr)
     }
 
     fun storeByte(addr: Int, value: Int) {
@@ -366,14 +386,14 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
     }
 
     fun getNextInstruction(): MachineCode {
-        val short0 = loadHalfWord(getPC())
-        val length = getInstructionLength(short0)
-        if (length != 4) {
-            throw SimulatorError("Instruction length != 4 not supported! (This may be due to you overriding parts of the text causing an invalid instruction)")
+        var instruction = loadHalfWord(getPC())
+        val length = getInstructionLength(instruction)
+        for (i in 1 until length / 2) {
+            val short = loadHalfWord(getPC() + 2)
+            instruction = (short shl 16 * i) or instruction
         }
-
-        val short1 = loadHalfWord(getPC() + 2)
-
-        return MachineCode((short1 shl 16) or short0)
+        val mcode = MachineCode(instruction)
+        mcode.length = length
+        return mcode
     }
 }

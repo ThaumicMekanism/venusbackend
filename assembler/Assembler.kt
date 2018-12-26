@@ -5,7 +5,6 @@ import venusbackend.assembler.pseudos.checkArgsLength
 import venus.Renderer
 import venusbackend.riscv.*
 import venusbackend.riscv.insts.InstructionNotFoundError
-import venusbackend.riscv.insts.InstructionSize
 import venusbackend.riscv.insts.dsl.Instruction
 import venusbackend.riscv.insts.dsl.getImmWarning
 import venusbackend.riscv.insts.dsl.relocators.Relocator
@@ -24,10 +23,9 @@ object Assembler {
      * @see venus.linker.Linker
      * @see venus.simulator.Simulator
      */
-    var defaultInstructionSize: InstructionSize = InstructionSize.B32
     fun assemble(text: String, name: String = "anonymous"): AssemblerOutput {
-        InitInstructions()
-        var (passOneProg, talInstructions, passOneErrors) = AssemblerPassOne(text, name).run()
+        InitInstructions() // This is due to how some method of compilation handle all of the code.
+        var (passOneProg, talInstructions, passOneErrors) = AssemblerPassOne(text.replace("\r", ""), name).run()
 
         /* This will force pc to be word aligned. Removed it because I guess you could custom it.
         if (passOneProg.insts.size > 0) {
@@ -83,7 +81,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     /** The text offset where the next instruction will be written */
     private var currentTextOffset = 0 // MemorySegments.TEXT_BEGIN
     /** The data offset where more data will be written */
-    private var currentDataOffset = MemorySegments.STATIC_BEGIN // - MemorySegments.TEXT_BEGIN
+    private var currentDataOffset = MemorySegments.STATIC_BEGIN
     /** The allows user to set custom memory segments until the venusbackend.assembler has used an offset. */
     private var allow_custom_memory_setments = true
     /** Whether or not we are currently in the text segment */
@@ -95,7 +93,6 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     /** List of all errors encountered */
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
-    private var currentInstructionSize: InstructionSize = Assembler.defaultInstructionSize
 
     fun run(): PassOneOutput {
         doPassOne()
@@ -127,8 +124,13 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     val expandedInsts = replacePseudoInstructions(args)
                     for (inst in expandedInsts) {
                         val dbg = DebugInfo(currentLineNumber, line)
+                        val instsize = try {
+                            Instruction[getInstruction(inst)].format.length
+                        } catch (e: AssemblerError) {
+                            4
+                        }
                         talInstructions.add(DebugInstruction(dbg, inst))
-                        currentTextOffset += 4
+                        currentTextOffset += instsize
                     }
                 }
             } catch (e: AssemblerError) {
@@ -232,19 +234,23 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             ".data" -> inTextSegment = false
             ".text" -> {
                 inTextSegment = true
-                try {
-                    checkArgsLength(args, 0)
-                    currentInstructionSize = Assembler.defaultInstructionSize
-                } catch (e: AssemblerError) {
-                    try {
-                        checkArgsLength(args, 1)
-                    } catch (ee: AssemblerError) {
-                        throw AssemblerError(".text takes in zero or one argument(s) to specify encoding!")
-                    }
-                    val instwidth = userStringToInt(args[0])
-                    currentInstructionSize = InstructionSize.getInstSize(instwidth)
-                }
+            }
 
+            ".register_size" -> {
+                if (!allow_custom_memory_setments) {
+                    throw AssemblerError("""You can only set the register size address BEFORE any labels or
+                        |instructions have been processed""".trimMargin())
+                }
+                try {
+                    checkArgsLength(args, 1)
+                } catch (e: AssemblerError) {
+                    throw AssemblerError("$directive takes in zero or one argument(s) to specify encoding!")
+                }
+                val instwidth = userStringToInt(args[0])
+                if (!listOf(16, 32, 64, 128).contains(instwidth)) {
+                    throw AssemblerError("Unknown instruction size!")
+                }
+                Renderer.displayWarning("Will set width to $instwidth!")
             }
 
             ".data_start" -> {

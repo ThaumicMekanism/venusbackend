@@ -4,6 +4,7 @@ import venusbackend.riscv.insts.dsl.disasms.base.RTypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.RTypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
 import venusbackend.riscv.insts.dsl.impls.base.RTypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.base.RTypeImplementation64
 import venusbackend.riscv.insts.dsl.parsers.base.RTypeParser
 
 class RTypeInstruction(
@@ -21,7 +22,7 @@ class RTypeInstruction(
         parser = RTypeParser,
         impl16 = NoImplementation,
         impl32 = RTypeImplementation32(eval32),
-        impl64 = NoImplementation,
+        impl64 = RTypeImplementation64(eval64),
         impl128 = NoImplementation,
         disasm = RTypeDisassembler
 )

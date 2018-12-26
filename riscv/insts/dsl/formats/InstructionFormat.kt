@@ -12,6 +12,7 @@ open class InstructionFormat(val length: Int, val ifields: List<FieldEqual>) {
 
     fun fill(): MachineCode {
         val mcode = MachineCode(0)
+        mcode.length = length
         for ((ifield, required) in ifields) {
             mcode[ifield] = required
         }

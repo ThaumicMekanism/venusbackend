@@ -16,6 +16,7 @@ import venusbackend.riscv.insts.integer.base.s.*
 import venusbackend.riscv.insts.integer.base.u.*
 import venusbackend.riscv.insts.integer.base.uj.*
 import venusbackend.riscv.insts.integer.extensions.atomic.r.*
+import venusbackend.riscv.insts.integer.extensions.compressed.cs.cand
 import venusbackend.riscv.insts.integer.extensions.multiply.r.*
 /* ktlint-enable no-wildcard-imports */
 
@@ -158,6 +159,7 @@ class InitInstructions {
             fsw
             fcvtds
             fcvtsd
+            cand
             inited = true
         }
     }
