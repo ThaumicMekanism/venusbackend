@@ -1,7 +1,5 @@
 package venusbackend.simulator
 
-import java.math.BigInteger
-
 /**
  * A class representing a computer's memory.
  */

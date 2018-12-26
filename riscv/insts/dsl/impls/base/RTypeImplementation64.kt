@@ -4,7 +4,6 @@ import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.dsl.impls.InstructionImplementation
 import venusbackend.simulator.Simulator
-import java.math.BigInteger
 
 class RTypeImplementation64(private val eval: (Long, Long) -> Long) : InstructionImplementation {
     override operator fun invoke(mcode: MachineCode, sim: Simulator) {
