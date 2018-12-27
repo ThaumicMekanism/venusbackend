@@ -8,7 +8,7 @@ class SimulatorState {
     /*Register 33 is the special register.*/
     private val regs = IntArray(33)
     private val fregs = Array(33, { i: Int -> Decimal() })
-    val mem = Memory()
+    var mem = Memory()
     var cache = CacheHandler(1)
     var pc: Int = 0
     var heapEnd: Int = MemorySegments.HEAP_BEGIN

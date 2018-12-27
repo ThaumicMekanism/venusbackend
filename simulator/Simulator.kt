@@ -58,6 +58,10 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         return cycles
     }
 
+    fun setMemory(mem: Memory) {
+        state.mem = mem
+    }
+
     fun run() {
         while (!isDone() && cycles <= settings.maxSteps) {
             step()
