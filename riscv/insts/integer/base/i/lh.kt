@@ -10,9 +10,9 @@ val lh = LoadTypeInstruction(
 //        load16 = Simulator::loadHalfWordwCache,
 //        postLoad16 = { v -> signExtend(v, 16) },
         load32 = { sim, address -> sim.loadHalfWordwCache(address).toInt() },
-        postLoad32 = { v -> signExtend(v, 16) }
-//        load64 = Simulator::loadHalfWordwCache,
-//        postLoad64 = { v -> signExtend(v, 16) },
+        postLoad32 = { v -> signExtend(v, 16) },
+        load64 = { sim, address -> sim.loadHalfWordwCache(address).toLong() },
+        postLoad64 = { v -> signExtend(v.toInt(), 16).toLong() }
 //        load128 = Simulator::loadHalfWordwCache,
 //        postLoad128 = { v -> signExtend(v, 16) }
 )

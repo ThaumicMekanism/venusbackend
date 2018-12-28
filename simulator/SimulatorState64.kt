@@ -11,6 +11,7 @@ class SimulatorState64 : SimulatorState {
     private var pc: Long = 0
     private var heapEnd = MemorySegments.HEAP_BEGIN.toLong()
 
+    override val registerWidth = 64
     override var mem = Memory()
     override var cache = CacheHandler(1)
     override fun setPC(location: Number) {

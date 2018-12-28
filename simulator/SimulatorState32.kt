@@ -11,6 +11,7 @@ class SimulatorState32 : SimulatorState {
     private var pc: Int = 0
     private var heapEnd = MemorySegments.HEAP_BEGIN
 
+    override val registerWidth = 32
     override var mem = Memory()
     override var cache = CacheHandler(1)
     override fun setPC(location: Number) {

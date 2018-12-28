@@ -10,9 +10,9 @@ val lb = LoadTypeInstruction(
 //        load16 = NoImplementation,
 //        postLoad16 = NoImplementation,
         load32 = { sim, address -> sim.loadBytewCache(address).toInt() },
-        postLoad32 = { v -> signExtend(v, 8) }
-//        load64 = NoImplementation,
-//        postLoad64 = NoImplementation,
+        postLoad32 = { v -> signExtend(v, 8) },
+        load64 = { sim, address -> sim.loadBytewCache(address).toLong() },
+        postLoad64 = { v -> signExtend(v.toInt(), 8).toLong() }
 //        load128 = NoImplementation,
 //        postLoad128 = NoImplementation
 )

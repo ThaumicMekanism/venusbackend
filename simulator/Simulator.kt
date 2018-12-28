@@ -104,7 +104,7 @@ class Simulator(
         preInstruction.clear()
         postInstruction.clear()
         val mcode: MachineCode = getNextInstruction()
-        when (settings.registerWidth) {
+        when (state.registerWidth) {
             16 -> { Instruction[mcode].impl16(mcode, this) }
             32 -> { Instruction[mcode].impl32(mcode, this) }
             64 -> { Instruction[mcode].impl64(mcode, this) }
@@ -344,13 +344,13 @@ class Simulator(
         postInstruction.add(CacheDiff(Address(addr, MemSize.BYTE)))
     }
 
-    fun storeHalfWord(addr: Int, value: Int) {
+    fun storeHalfWord(addr: Number, value: Number) {
         preInstruction.add(MemoryDiff(addr, loadWord(addr)))
         state.mem.storeHalfWord(addr, value)
         postInstruction.add(MemoryDiff(addr, loadWord(addr)))
         this.storeTextOverrideCheck(addr, value, MemSize.HALF)
     }
-    fun storeHalfWordwCache(addr: Int, value: Int) {
+    fun storeHalfWordwCache(addr: Number, value: Number) {
         if (this.settings.alignedAddress && addr % MemSize.HALF.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not HALF WORD aligned!")
         }
@@ -363,13 +363,13 @@ class Simulator(
         postInstruction.add(CacheDiff(Address(addr, MemSize.HALF)))
     }
 
-    fun storeWord(addr: Int, value: Int) {
+    fun storeWord(addr: Number, value: Number) {
         preInstruction.add(MemoryDiff(addr, loadWord(addr)))
         state.mem.storeWord(addr, value)
         postInstruction.add(MemoryDiff(addr, loadWord(addr)))
         this.storeTextOverrideCheck(addr, value, MemSize.WORD)
     }
-    fun storeWordwCache(addr: Int, value: Int) {
+    fun storeWordwCache(addr: Number, value: Number) {
         if (this.settings.alignedAddress && addr % MemSize.WORD.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not WORD aligned!")
         }

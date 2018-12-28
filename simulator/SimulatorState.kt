@@ -6,6 +6,7 @@ import venusbackend.simulator.cache.CacheHandler
 interface SimulatorState {
     var mem: Memory
     var cache: CacheHandler
+    val registerWidth: Int
     fun getPC(): Number
     fun setPC(location: Number)
     fun incPC(amount: Number)

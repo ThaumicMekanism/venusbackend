@@ -2,6 +2,7 @@ package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.riscv.insts.InstructionNotSupportedError
 import venusbackend.riscv.insts.dsl.LoadTypeInstruction
+import venusbackend.simulator.Simulator
 
 val ld = LoadTypeInstruction(
         name = "ld",
@@ -10,7 +11,7 @@ val ld = LoadTypeInstruction(
 //        load16 = Simulator::loadWordwCache
         load32 = { a, b ->
             throw InstructionNotSupportedError("LD is not supported by 32 bit systems!")
-        }
-//        load64 = Simulator::loadWordwCache
+        },
+        load64 = Simulator::loadLongwCache
 //        load128 = Simulator::loadWordwCache
 )

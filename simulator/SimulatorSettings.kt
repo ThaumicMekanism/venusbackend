@@ -8,6 +8,5 @@ data class SimulatorSettings(
     var mutableText: Boolean = true,
     var ecallOnlyExit: Boolean = false,
     var setRegesOnInit: Boolean = true,
-    var maxSteps: Int = 500000,
-    var registerWidth: Int = 32
+    var maxSteps: Int = 500000
 )

@@ -7,7 +7,7 @@ val lhu = LoadTypeInstruction(
         opcode = 0b0000011,
         funct3 = 0b101,
 //        load16 = NoImplementation,
-        load32 = { sim, address -> sim.loadHalfWordwCache(address) }
-//        load64 = NoImplementation,
+        load32 = { sim, address -> sim.loadHalfWordwCache(address) },
+        load64 = { sim, address -> sim.loadHalfWordwCache(address).toLong() }
 //        load128 = NoImplementation
 )
