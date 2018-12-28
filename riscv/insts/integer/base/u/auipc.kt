@@ -13,6 +13,10 @@ val auipc = UTypeInstruction(
             sim.setReg(mcode[InstructionField.RD].toInt(), sim.getPC().toInt() + offset)
             sim.incrementPC(mcode.length)
         },
-        impl64 = NoImplementation::invoke,
+        impl64 = { mcode, sim ->
+            val offset = (mcode[InstructionField.IMM_31_12].toInt() shl 12).toLong()
+            sim.setReg(mcode[InstructionField.RD].toInt(), sim.getPC().toLong() + offset)
+            sim.incrementPC(mcode.length)
+        },
         impl128 = NoImplementation::invoke
 )

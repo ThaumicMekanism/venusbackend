@@ -40,7 +40,15 @@ val jalr = Instruction(
             sim.setPC(((vrs1 + imm) shr 1) shl 1)
             sim.jumped = true
         },
-        impl64 = NoImplementation,
+        impl64 = RawImplementation { mcode, sim ->
+            val rd = mcode[InstructionField.RD].toInt()
+            val rs1 = mcode[InstructionField.RS1].toInt()
+            val imm = signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12).toLong()
+            val vrs1 = sim.getReg(rs1).toLong()
+            sim.setReg(rd, sim.getPC().toLong() + mcode.length)
+            sim.setPC(((vrs1 + imm) shr 1) shl 1)
+            sim.jumped = true
+        },
         impl128 = NoImplementation,
         disasm = RawDisassembler { mcode ->
             val rd = mcode[InstructionField.RD]

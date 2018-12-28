@@ -45,7 +45,13 @@ val jal = Instruction(
             sim.incrementPC(imm)
             sim.jumped = true
         },
-        impl64 = NoImplementation,
+        impl64 = RawImplementation { mcode, sim ->
+            val rd = mcode[InstructionField.RD].toInt()
+            val imm = constructJALImmediate(mcode).toLong()
+            sim.setReg(rd, sim.getPC().toLong() + mcode.length)
+            sim.incrementPC(imm)
+            sim.jumped = true
+        },
         impl128 = NoImplementation,
         disasm = RawDisassembler { mcode ->
             val rd = mcode[InstructionField.RD]

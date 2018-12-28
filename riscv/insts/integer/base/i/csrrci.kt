@@ -26,7 +26,13 @@ val csrrci = Instruction(
             sim.setReg(32, imm.inv() and vcsr)
             sim.incrementPC(mcode.length)
         },
-        impl64 = NoImplementation,
+        impl64 = RawImplementation { mcode, sim ->
+            val imm = mcode[InstructionField.RS1].toLong()
+            val vcsr = sim.getReg(32).toLong()
+            sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
+            sim.setReg(32, imm.inv() and vcsr)
+            sim.incrementPC(mcode.length)
+        },
         impl128 = NoImplementation,
         disasm = RawDisassembler {
             val dest = it[InstructionField.RD]

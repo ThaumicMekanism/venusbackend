@@ -4,7 +4,7 @@ import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.dsl.Instruction
 import venusbackend.riscv.insts.dsl.disasms.InstructionDisassembler
-import venusbackend.riscv.insts.dsl.impls.base.constructStoreImmediate
+import venusbackend.riscv.insts.dsl.impls.base.b32.constructStoreImmediate
 
 /**
  * Created by thaum on 8/6/2018.

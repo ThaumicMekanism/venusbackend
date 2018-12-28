@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.dsl
 
 import venusbackend.riscv.insts.dsl.disasms.extensions.AMORTypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.extensions.AMORTypeFormat
-import venusbackend.riscv.insts.dsl.impls.extensions.AMORTypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.extensions.b32.AMORTypeImplementation32
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
 import venusbackend.riscv.insts.dsl.parsers.extensions.AMORTypeParser
 

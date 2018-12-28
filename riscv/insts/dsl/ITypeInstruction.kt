@@ -2,8 +2,9 @@ package venusbackend.riscv.insts.dsl
 
 import venusbackend.riscv.insts.dsl.disasms.base.ITypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.ITypeFormat
-import venusbackend.riscv.insts.dsl.impls.base.ITypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.base.b32.ITypeImplementation32
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
+import venusbackend.riscv.insts.dsl.impls.base.b64.ITypeImplementation64
 import venusbackend.riscv.insts.dsl.parsers.base.ITypeParser
 
 class ITypeInstruction(
@@ -20,7 +21,7 @@ class ITypeInstruction(
         parser = ITypeParser,
         impl16 = NoImplementation,
         impl32 = ITypeImplementation32(eval32),
-        impl64 = NoImplementation,
+        impl64 = ITypeImplementation64(eval64),
         impl128 = NoImplementation,
         disasm = ITypeDisassembler
 )

@@ -3,8 +3,8 @@ package venusbackend.riscv.insts.dsl
 import venusbackend.riscv.insts.dsl.disasms.base.RTypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.RTypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
-import venusbackend.riscv.insts.dsl.impls.base.RTypeImplementation32
-import venusbackend.riscv.insts.dsl.impls.base.RTypeImplementation64
+import venusbackend.riscv.insts.dsl.impls.base.b32.RTypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.base.b64.RTypeImplementation64
 import venusbackend.riscv.insts.dsl.parsers.base.RTypeParser
 
 class RTypeInstruction(

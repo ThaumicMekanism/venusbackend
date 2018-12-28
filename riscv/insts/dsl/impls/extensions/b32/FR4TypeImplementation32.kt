@@ -1,4 +1,4 @@
-package venusbackend.riscv.insts.dsl.impls.extensions
+package venusbackend.riscv.insts.dsl.impls.extensions.b32
 
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode

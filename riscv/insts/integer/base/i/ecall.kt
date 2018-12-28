@@ -44,7 +44,29 @@ val ecall = Instruction(
                 sim.incrementPC(mcode.length)
             }
         },
-        impl64 = NoImplementation,
+        impl64 = RawImplementation { mcode, sim ->
+            val whichCall = sim.getReg(10).toLong()
+            when (whichCall) {
+                1L -> printInteger(sim)
+                4L -> printString(sim)
+                9L -> sbrk(sim)
+                10L -> exit(sim)
+                11L -> printChar(sim)
+                13L -> openFile(sim)
+                14L -> readFile(sim)
+                15L -> writeFile(sim)
+                16L -> closeFile(sim)
+                17L -> exitWithCode(sim)
+                18L -> fflush(sim)
+                19L -> feof(sim)
+                20L -> ferror(sim)
+                34L -> printHex(sim)
+                else -> Renderer.printConsole("Invalid ecall $whichCall")
+            }
+            if (!(whichCall == 10L || whichCall == 17L)) {
+                sim.incrementPC(mcode.length)
+            }
+        },
         impl128 = NoImplementation,
         disasm = RawDisassembler { "ecall" }
 )

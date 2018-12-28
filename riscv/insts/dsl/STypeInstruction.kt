@@ -3,7 +3,8 @@ package venusbackend.riscv.insts.dsl
 import venusbackend.riscv.insts.dsl.disasms.base.STypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.STypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
-import venusbackend.riscv.insts.dsl.impls.base.STypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.base.b32.STypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.base.b64.STypeImplementation64
 import venusbackend.riscv.insts.dsl.parsers.base.STypeParser
 import venusbackend.simulator.Simulator
 
@@ -21,7 +22,7 @@ class STypeInstruction(
         parser = STypeParser,
         impl16 = NoImplementation,
         impl32 = STypeImplementation32(store32),
-        impl64 = NoImplementation,
+        impl64 = STypeImplementation64(store64),
         impl128 = NoImplementation,
         disasm = STypeDisassembler
 )

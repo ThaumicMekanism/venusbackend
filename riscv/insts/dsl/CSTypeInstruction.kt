@@ -3,7 +3,7 @@ package venusbackend.riscv.insts.dsl
 import venusbackend.riscv.insts.dsl.disasms.extensions.CSTypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.extensions.CSTypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
-import venusbackend.riscv.insts.dsl.impls.extensions.CSTypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.extensions.b32.CSTypeImplementation32
 import venusbackend.riscv.insts.dsl.parsers.extensions.CSTypeParser
 
 class CSTypeInstruction(

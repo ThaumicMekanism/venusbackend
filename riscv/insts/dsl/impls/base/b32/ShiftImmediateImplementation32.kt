@@ -1,17 +1,17 @@
-package venusbackend.riscv.insts.dsl.impls.extensions
+package venusbackend.riscv.insts.dsl.impls.base.b32
 
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.dsl.impls.InstructionImplementation
-import venusbackend.riscv.insts.floating.Decimal
 import venusbackend.simulator.Simulator
 
-class RtFTypeImplementation32(private val eval: (Int) -> Decimal) : InstructionImplementation {
+class ShiftImmediateImplementation32(private val eval: (Int, Int) -> Int) : InstructionImplementation {
     override operator fun invoke(mcode: MachineCode, sim: Simulator) {
         val rs1 = mcode[InstructionField.RS1].toInt()
+        val shamt = mcode[InstructionField.SHAMT].toInt()
         val rd = mcode[InstructionField.RD].toInt()
         val vrs1 = sim.getReg(rs1).toInt()
-        sim.setFReg(rd, eval(vrs1))
+        sim.setReg(rd, eval(vrs1, shamt))
         sim.incrementPC(mcode.length)
     }
 }

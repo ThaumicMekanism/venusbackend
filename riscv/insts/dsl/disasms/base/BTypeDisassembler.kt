@@ -4,7 +4,7 @@ import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.dsl.Instruction
 import venusbackend.riscv.insts.dsl.disasms.InstructionDisassembler
-import venusbackend.riscv.insts.dsl.impls.base.constructBranchImmediate
+import venusbackend.riscv.insts.dsl.impls.base.b32.constructBranchImmediate
 
 object BTypeDisassembler : InstructionDisassembler {
     override fun invoke(mcode: MachineCode): String {

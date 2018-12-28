@@ -11,7 +11,11 @@ val lui = UTypeInstruction(
             val imm = mcode[InstructionField.IMM_31_12].toInt() shl 12
             sim.setReg(mcode[InstructionField.RD].toInt(), imm)
             sim.incrementPC(mcode.length)
+        },
+        impl64 = { mcode, sim ->
+            val imm = (mcode[InstructionField.IMM_31_12].toInt() shl 12).toLong()
+            sim.setReg(mcode[InstructionField.RD].toInt(), imm)
+            sim.incrementPC(mcode.length)
         }
-//        impl64 = NoImplementation,
 //        impl128 = NoImplementation
 )

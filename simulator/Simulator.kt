@@ -19,9 +19,10 @@ class Simulator(
     val linkedProgram: LinkedProgram,
     val VFS: VirtualFileSystem = VirtualFileSystem("dummy"),
     var settings: SimulatorSettings = SimulatorSettings(),
+    val state: SimulatorState = SimulatorState32(),
     val simulatorID: Int = 0
 ) {
-    val state: SimulatorState = SimulatorState32()
+
     // TODO make pc not rely on being an INT
     private var maxpc = MemorySegments.TEXT_BEGIN
     private var cycles = 0

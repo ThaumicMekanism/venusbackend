@@ -2,8 +2,9 @@ package venusbackend.riscv.insts.dsl
 
 import venusbackend.riscv.insts.dsl.disasms.base.LoadDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.ITypeFormat
-import venusbackend.riscv.insts.dsl.impls.base.LoadImplementation32
+import venusbackend.riscv.insts.dsl.impls.base.b32.LoadImplementation32
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
+import venusbackend.riscv.insts.dsl.impls.base.b64.LoadImplementation64
 import venusbackend.riscv.insts.dsl.parsers.base.LoadParser
 import venusbackend.simulator.Simulator
 
@@ -25,7 +26,7 @@ class LoadTypeInstruction(
         parser = LoadParser,
         impl16 = NoImplementation,
         impl32 = LoadImplementation32(load32, postLoad32),
-        impl64 = NoImplementation,
+        impl64 = LoadImplementation64(load64, postLoad64),
         impl128 = NoImplementation,
         disasm = LoadDisassembler
 )

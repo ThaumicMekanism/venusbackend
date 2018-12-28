@@ -4,7 +4,7 @@ import venusbackend.riscv.insts.dsl.Instruction
 import venusbackend.riscv.insts.dsl.disasms.extensions.FRTypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.RTypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
-import venusbackend.riscv.insts.dsl.impls.extensions.FRTypeImplementation32
+import venusbackend.riscv.insts.dsl.impls.extensions.b32.FRTypeImplementation32
 import venusbackend.riscv.insts.dsl.parsers.extensions.FRTypeParser
 import venusbackend.riscv.insts.floating.Decimal
 
