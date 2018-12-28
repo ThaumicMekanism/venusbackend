@@ -7,8 +7,8 @@ val cxor = CSTypeInstruction(
         opcode2 = 0b01,
         funct = 0b11,
         funct6 = 0b100011,
-        eval16 = { a, b -> (a.toInt() or b.toInt()).toShort() },
-        eval32 = { a, b -> a or b },
-        eval64 = { a, b -> a or b },
-        eval128 = { a, b -> a or b }
+        eval16 = { a, b -> (a.toInt() xor b.toInt()).toShort() },
+        eval32 = { a, b -> a xor b },
+        eval64 = { a, b -> a xor b },
+        eval128 = { a, b -> a xor b }
 )
