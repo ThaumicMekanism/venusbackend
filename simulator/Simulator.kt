@@ -23,7 +23,7 @@ class Simulator(
 ) {
     val state: SimulatorState = SimulatorState32()
     // TODO make pc not rely on being an INT
-    private var maxpc = MemorySegments.TEXT_BEGIN
+    private var maxpc: Long = MemorySegments.TEXT_BEGIN.toLong()
     private var cycles = 0
     private val history = History()
     private val preInstruction = ArrayList<Diff>()
