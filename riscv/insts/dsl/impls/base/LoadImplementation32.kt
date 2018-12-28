@@ -11,10 +11,10 @@ class LoadImplementation32(
     private val postLoad: (Int) -> Int
 ) : InstructionImplementation {
     override operator fun invoke(mcode: MachineCode, sim: Simulator) {
-        val rs1 = mcode[InstructionField.RS1]
-        val rd = mcode[InstructionField.RD]
-        val vrs1 = sim.getReg(rs1)
-        val imm = signExtend(mcode[InstructionField.IMM_11_0], 12)
+        val rs1 = mcode[InstructionField.RS1].toInt()
+        val rd = mcode[InstructionField.RD].toInt()
+        val vrs1 = sim.getReg(rs1).toInt()
+        val imm = signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12)
         sim.setReg(rd, postLoad(load(sim, vrs1 + imm)))
         sim.incrementPC(mcode.length)
     }

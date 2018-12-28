@@ -20,9 +20,9 @@ val csrrc = Instruction(
         parser = CSRTypeParser,
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
-            val vrs1 = sim.getReg(mcode[InstructionField.RS1])
-            val vcsr = sim.getReg(32)
-            sim.setReg(mcode[InstructionField.RD], vcsr)
+            val vrs1 = sim.getReg(mcode[InstructionField.RS1].toInt()).toInt()
+            val vcsr = sim.getReg(32).toInt()
+            sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
             sim.setReg(32, vrs1.inv() and vcsr)
             sim.incrementPC(mcode.length)
         },

@@ -1,6 +1,9 @@
 package venusbackend.simulator.cache
 
+/* ktlint-disable no-wildcard-imports */
+import venusbackend.*
 import venusbackend.riscv.Address
+/* ktlint-enable no-wildcard-imports */
 
 class Cache
 /* ktlint-disable no-multi-spaces */
@@ -56,10 +59,10 @@ class Cache
         }
 
         // calculate what set the block is in and ask it for the data
-        val set = sets[address.address / this.c.cacheBlockSize() % sets.size]
-        val blockoffset = address.address % this.c.cacheBlockSize()
+        val set = sets[(address.address / this.c.cacheBlockSize() % sets.size).toInt()]
+        val blockoffset = (address.address % this.c.cacheBlockSize()).toInt()
         numReads++
-        set.read(getTag(address.address), blockoffset, bs)
+        set.read(getTag(address.address).toInt(), blockoffset, bs)
         return h
     }
 
@@ -77,30 +80,30 @@ class Cache
         }
 
         // calculate what set the block is in and ask it for the data
-        val index = address.address / this.c.cacheBlockSize() % sets.size
-        val blockoffset = address.address % this.c.cacheBlockSize()
+        val index = (address.address / this.c.cacheBlockSize() % sets.size).toInt()
+        val blockoffset = (address.address % this.c.cacheBlockSize()).toInt()
         val set = sets[index]
         numWrites++
-        set.write(getTag(address.address), blockoffset/*, data*/, bs)
+        set.write(getTag(address.address).toInt(), blockoffset/*, data*/, bs)
         return h
     }
 
     private fun isInMemory(address: Address): Boolean {
         val index = address.address / this.c.cacheBlockSize() % sets.size
-        return sets[index].findBlock(getTag(address.address)) != null
+        return sets[index.toInt()].findBlock(getTag(address.address).toInt()) != null
     }
 
-    private fun getTag(address: Int): Int {
+    private fun getTag(address: Number): Number {
         // System.out.println((int) ( (double)address / ((double)sets.length * (double)blocksize)));
         return address / (sets.size * this.c.cacheBlockSize())
     }
 
     // should only be called if we already know the address is not in cache
-    private fun allocate(address: Int) {
+    private fun allocate(address: Number) {
 
         // val index = address / blocksize % sets.size
-        val index = address / c.cacheBlockSize() % sets.size
-        val set = sets[index]
+        val index = (address / c.cacheBlockSize() % sets.size).toInt()
+        val set = sets[index.toInt()]
         var evictee: Block
         if (c.blockRepPolicy().equals(BlockReplacementPolicy.RANDOM)) {
             evictee = set.getRandom()
@@ -119,7 +122,7 @@ class Cache
         // Then write the block with the data we need
         // val SAddress = address / blocksize * blocksize
         val SAddress = (address / c.cacheBlockSize()) * c.cacheBlockSize()
-        evictee.writeBlock(getTag(address))
+        evictee.writeBlock(getTag(address).toInt())
     }
 
     fun copy(): Cache {

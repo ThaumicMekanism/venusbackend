@@ -32,11 +32,11 @@ val jalr = Instruction(
         },
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
-            val rd = mcode[InstructionField.RD]
-            val rs1 = mcode[InstructionField.RS1]
-            val imm = signExtend(mcode[InstructionField.IMM_11_0], 12)
-            val vrs1 = sim.getReg(rs1)
-            sim.setReg(rd, sim.getPC() + mcode.length)
+            val rd = mcode[InstructionField.RD].toInt()
+            val rs1 = mcode[InstructionField.RS1].toInt()
+            val imm = signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12)
+            val vrs1 = sim.getReg(rs1).toInt()
+            sim.setReg(rd, sim.getPC().toInt() + mcode.length)
             sim.setPC(((vrs1 + imm) shr 1) shl 1)
             sim.jumped = true
         },
@@ -45,7 +45,7 @@ val jalr = Instruction(
         disasm = RawDisassembler { mcode ->
             val rd = mcode[InstructionField.RD]
             val rs1 = mcode[InstructionField.RS1]
-            val imm = signExtend(mcode[InstructionField.IMM_11_0], 12)
+            val imm = signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12)
             "jalr x$rd x$rs1 $imm"
         }
 )

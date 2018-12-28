@@ -1,5 +1,8 @@
 package venusbackend.simulator
 
+import venusbackend.compareTo
+import venusbackend.minus
+import venusbackend.plus
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.MemorySegments
 
@@ -104,10 +107,10 @@ class Tracer(val sim: Simulator) {
         return Trace(didBrach(), didJump(), getecallMsg(), getRegs(), mc, line, sim.getPC())
     }
 
-    fun getRegs(): IntArray {
-        var r = IntArray(amtReg)
+    fun getRegs(): Array<Number> {
+        val r = Array<Number>(amtReg) { 0 }
         for (i in 0..(amtReg - 1)) {
-            r.set(i, sim.getReg(i))
+            r[i] = sim.getReg(i)
         }
         return r
     }
@@ -185,7 +188,7 @@ class Tracer(val sim: Simulator) {
         var nextPC = flushed.pc + flushed.inst.length
         flushed.pc = nextPC
         nextPC -= MemorySegments.TEXT_BEGIN
-        flushed.inst = if (nextPC < this.sim.maxpc) this.sim.linkedProgram.prog.insts[nextPC / flushed.inst.length] else MachineCode(0)
+        flushed.inst = if (nextPC < this.sim.getMaxPC()) this.sim.getInstAt(nextPC) else MachineCode(0)
         flushed.line = this.tr.stringIndex
         if (this.instFirst && this.twoStage) {
             flushed.regs = t.regs
@@ -199,7 +202,7 @@ class Tracer(val sim: Simulator) {
         var nextPC = flushed.pc + flushed.inst.length
         flushed.pc = nextPC
         nextPC -= MemorySegments.TEXT_BEGIN
-        flushed.inst = if (nextPC < this.sim.maxpc) this.sim.linkedProgram.prog.insts[nextPC / flushed.inst.length] else MachineCode(0)
+        flushed.inst = if (nextPC < this.sim.getMaxPC()) this.sim.getInstAt(nextPC) else MachineCode(0)
         flushed.line = this.tr.stringIndex
         if (this.instFirst && this.twoStage) {
 //            flushed.regs = t.regs
@@ -214,7 +217,7 @@ class Tracer(val sim: Simulator) {
         while (this.tr.stringIndex < this.totCommands) {
             t.inst = MachineCode(0)
             t.line++
-            t.pc = incPC(t.pc)
+            t.pc += t.inst.length
             this.tr.str += t.getString(format, base)
             this.tr.stringIndex++
         }

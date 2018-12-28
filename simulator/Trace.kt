@@ -1,5 +1,7 @@
 package venusbackend.simulator
 
+import venusbackend.div
+import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import kotlin.math.log2
 import kotlin.math.pow
@@ -9,14 +11,14 @@ import kotlin.math.roundToInt
  * Created by Thaumic on 7/14/2018.
  */
 
-class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: IntArray, inst: MachineCode, line: Int, pc: Int) {
+class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Number>, inst: MachineCode, line: Int, pc: Number) {
     var branched = false
     var jumped = false
     var ecallMsg = ""
-    var regs = IntArray(0)
+    var regs = Array<Number>(0) { 0 }
     var inst = MachineCode(0)
     var line = 0
-    var pc = 0
+    var pc: Number = 0
     var prevTrace: Trace? = null
 
     init {
@@ -33,14 +35,14 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: IntArray
         if (this.ecallMsg == "exiting the venusbackend.simulator") {
             return "exiting the venusbackend.simulator\n"
         }
-        var f = format.replace("%output%", this.ecallMsg).replace("%inst%", numToBase(base, this.inst.toString().toInt(), 32, true)).replace("%pc%", numToBase(base, this.getPC(), 32, false)).replace("%line%", numToBase(base, this.line, 16, false))
+        var f = format.replace("%output%", this.ecallMsg).replace("%inst%", numToBase(base, this.inst.get(InstructionField.ENTIRE), 32, true)).replace("%pc%", numToBase(base, this.getPC(), 32, false)).replace("%line%", numToBase(base, this.line, 16, false))
         for (i in 0..(regs.size - 1)) {
-            f = f.replace("%" + i.toString() + "%", numToBase(base, this.regs[i], 32, true))
+            f = f.replace("%" + i.toString() + "%", numToBase(base, this.regs[i].toInt(), 32, true))
         }
         return f
     }
 
-    fun getPC(): Int {
+    fun getPC(): Number {
         if (wordAddressed) {
             return this.pc / 4
         }
@@ -55,7 +57,8 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: IntArray
 /*
 * Takes in a base 10 integer and a base to convert it to and returns a string of what the number is.
 */
-fun numToBase(curNumBase: Int, n: Int, lengthNeeded: Int, signextend: Boolean): String {
+fun numToBase(curNumBase: Int, nu: Number, lengthNeeded: Int, signextend: Boolean): String {
+    val n = nu.toInt() // FIXME
     val amount = ((2).toDouble()).pow(lengthNeeded.toDouble())
     val length = getBaseLog(curNumBase.toDouble(), amount).roundToInt()
     var num = if (signextend) {

@@ -39,9 +39,9 @@ val jal = Instruction(
         },
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
-            val rd = mcode[InstructionField.RD]
+            val rd = mcode[InstructionField.RD].toInt()
             val imm = constructJALImmediate(mcode)
-            sim.setReg(rd, sim.getPC() + mcode.length)
+            sim.setReg(rd, sim.getPC().toInt() + mcode.length)
             sim.incrementPC(imm)
             sim.jumped = true
         },
@@ -55,10 +55,10 @@ val jal = Instruction(
 )
 
 private fun constructJALImmediate(mcode: MachineCode): Int {
-    val imm_20 = mcode[InstructionField.IMM_20]
-    val imm_10_1 = mcode[InstructionField.IMM_10_1]
-    val imm_11 = mcode[InstructionField.IMM_11_J]
-    val imm_19_12 = mcode[InstructionField.IMM_19_12]
+    val imm_20 = mcode[InstructionField.IMM_20].toInt()
+    val imm_10_1 = mcode[InstructionField.IMM_10_1].toInt()
+    val imm_11 = mcode[InstructionField.IMM_11_J].toInt()
+    val imm_19_12 = mcode[InstructionField.IMM_19_12].toInt()
     var imm = 0
     imm = setBitslice(imm, imm_20, 20, 21)
     imm = setBitslice(imm, imm_10_1, 1, 11)

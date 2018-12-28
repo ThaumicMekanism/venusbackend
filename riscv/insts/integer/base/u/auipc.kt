@@ -9,8 +9,8 @@ val auipc = UTypeInstruction(
         opcode = 0b0010111,
         impl16 = NoImplementation::invoke,
         impl32 = { mcode, sim ->
-            val offset = mcode[InstructionField.IMM_31_12] shl 12
-            sim.setReg(mcode[InstructionField.RD], sim.getPC() + offset)
+            val offset = mcode[InstructionField.IMM_31_12].toInt() shl 12
+            sim.setReg(mcode[InstructionField.RD].toInt(), sim.getPC().toInt() + offset)
             sim.incrementPC(mcode.length)
         },
         impl64 = NoImplementation::invoke,

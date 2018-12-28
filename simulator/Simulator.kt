@@ -4,36 +4,44 @@ package venusbackend.simulator
 
 import venus.Renderer
 import venus.vfs.VirtualFileSystem
+import venusbackend.*
 import venusbackend.linker.LinkedProgram
 import venusbackend.riscv.*
 import venusbackend.riscv.insts.dsl.Instruction
 import venusbackend.riscv.insts.floating.Decimal
 import venusbackend.simulator.diffs.*
-import java.math.BigInteger
 
 /* ktlint-enable no-wildcard-imports */
 
 /** Right now, this is a loose wrapper around SimulatorState
     Eventually, it will support debugging. */
-class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = VirtualFileSystem("dummy"), var settings: SimulatorSettings = SimulatorSettings(), val simulatorID: Int = 0) {
-    val state = SimulatorState()
+class Simulator(
+    val linkedProgram: LinkedProgram,
+    val VFS: VirtualFileSystem = VirtualFileSystem("dummy"),
+    var settings: SimulatorSettings = SimulatorSettings(),
+    val simulatorID: Int = 0
+) {
+    val state: SimulatorState = SimulatorState32()
     // TODO make pc not rely on being an INT
-    var maxpc = MemorySegments.TEXT_BEGIN
+    private var maxpc = MemorySegments.TEXT_BEGIN
     private var cycles = 0
     private val history = History()
     private val preInstruction = ArrayList<Diff>()
     private val postInstruction = ArrayList<Diff>()
     private val breakpoints: Array<Boolean>
-    var args = ArrayList<String>()
+    private var args = ArrayList<String>()
     var ebreak = false
     var stdout = ""
     var filesHandler = FilesHandler(this)
-    val instOrderMapping = HashMap<BigInteger, BigInteger>()
+    val instOrderMapping = HashMap<Number, Number>()
+    val invInstOrderMapping = HashMap<Number, Number>()
 
     init {
-        var i = 0.toBigInteger()
+        (state).getReg(1)
+        var i = 0
         for (inst in linkedProgram.prog.insts) {
-            instOrderMapping[i] = maxpc.toBigInteger()
+            instOrderMapping[i] = maxpc
+            invInstOrderMapping[maxpc] = i
             i++
             var mcode = inst[InstructionField.ENTIRE]
             for (j in 0 until inst.length) {
@@ -49,10 +57,10 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
             dataOffset++
         }
 
-        state.pc = linkedProgram.startPC ?: MemorySegments.TEXT_BEGIN
+        setPC(linkedProgram.startPC ?: MemorySegments.TEXT_BEGIN)
         if (settings.setRegesOnInit) {
-            state.setReg(2, MemorySegments.STACK_BEGIN.toBigInteger())
-            state.setReg(3, MemorySegments.STATIC_BEGIN.toBigInteger())
+            state.setReg(2, MemorySegments.STACK_BEGIN)
+            state.setReg(3, MemorySegments.STATIC_BEGIN)
         }
 
         breakpoints = Array<Boolean>(linkedProgram.prog.insts.size, { false })
@@ -62,6 +70,15 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
 
     fun getCycles(): Int {
         return cycles
+    }
+
+    fun getMaxPC(): Number {
+        return this.maxpc
+    }
+
+    fun getInstAt(addr: Number): MachineCode {
+        val instnum = invInstOrderMapping[addr.toInt()]!!.toInt()
+        return linkedProgram.prog.insts[instnum]
     }
 
     fun setMemory(mem: Memory) {
@@ -109,7 +126,7 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
     }
 
     fun removeAllArgsFromMem() {
-        var sp = getRegActive(2)
+        var sp = getReg(2)
         while (sp < MemorySegments.STACK_BEGIN.toBigInteger() && settings.setRegesOnInit) {
             this.state.mem.removeByte(sp)
             sp++
@@ -135,29 +152,29 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
             return
         }
         args.add(arg)
-        var spv = if (getRegActive(2) == MemorySegments.STACK_BEGIN.toBigInteger()) {
-            getRegActive(2)
+        var spv = if (getReg(2) == MemorySegments.STACK_BEGIN) {
+            getReg(2)
         } else {
-            getRegActive(11)
-        } - 1.toBigInteger()
-        storeByteActive(spv, 0.toBigInteger())
-        setRegActive(2, spv)
+            getReg(11)
+        } - 1
+        storeByte(spv, 0)
+        setReg(2, spv)
         for (c in arg.reversed()) {
-            spv = getRegActive(2) - 1.toBigInteger()
-            storeByteActive(spv, c.toInt().toBigInteger())
-            setRegActive(2, spv)
+            spv = getReg(2) - 1
+            storeByte(spv, c.toInt())
+            setReg(2, spv)
         }
         /*Got to add the null terminator as well!*/
         /**
          * We need to store a0 (x10) to the argc and a1 (x11) to argv.
          */
-        setRegActive(10, args.size.toBigInteger())
-        setRegActive(11, spv)
-        setRegActive(2, (spv - (spv % 4.toBigInteger())))
+        setReg(10, args.size)
+        setReg(11, spv)
+        setReg(2, (spv - (spv % 4)))
         try {
-            Renderer.updateRegister(2, getRegActive(2))
-            Renderer.updateRegister(10, getRegActive(10))
-            Renderer.updateRegister(11, getRegActive(11))
+            Renderer.updateRegister(2, getReg(2))
+            Renderer.updateRegister(10, getReg(10))
+            Renderer.updateRegister(11, getReg(11))
             Renderer.updateMemory(Renderer.activeMemoryAddress)
         } catch (e: Throwable) {}
     }
@@ -166,32 +183,32 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         if (!settings.setRegesOnInit) {
             return
         }
-        var spv = if (getRegActive(2) == MemorySegments.STACK_BEGIN.toBigInteger()) {
-            getRegActive(2)
+        var spv = if (getReg(2) == MemorySegments.STACK_BEGIN) {
+            getReg(2)
         } else {
-            getRegActive(11)
-        } - 1.toBigInteger()
+            getReg(11)
+        } - 1
         for (arg in args) {
-            spv = getRegActive(2) - 1.toBigInteger()
-            storeByteActive(spv, 0.toBigInteger())
-            setRegActiveNoUndo(2, spv)
+            spv = getReg(2) - 1
+            storeByte(spv, 0)
+            setRegNoUndo(2, spv)
             for (c in arg.reversed()) {
-                spv = getRegActive(2) - 1.toBigInteger()
-                storeByteActive(spv, c.toInt().toBigInteger())
-                setRegActiveNoUndo(2, spv)
+                spv = getReg(2) - 1
+                storeByte(spv, c.toInt())
+                setRegNoUndo(2, spv)
             }
             /*Got to add the null terminator as well!*/
             /**
              * We need to store a0 (x10) to the argc and a1 (x11) to argv.
              */
-            setRegActiveNoUndo(10, args.size.toBigInteger())
-            setRegActiveNoUndo(11, spv)
+            setRegNoUndo(10, args.size)
+            setRegNoUndo(11, spv)
         }
-        setRegActiveNoUndo(2, spv - (spv % 4.toBigInteger()))
+        setRegNoUndo(2, spv - (spv % 4))
         try {
-            Renderer.updateRegister(2, getRegActive(2))
-            Renderer.updateRegister(10, getRegActive(10))
-            Renderer.updateRegister(11, getRegActive(11))
+            Renderer.updateRegister(2, getReg(2))
+            Renderer.updateRegister(10, getReg(10))
+            Renderer.updateRegister(11, getReg(11))
             Renderer.updateMemory(Renderer.activeMemoryAddress)
         } catch (e: Throwable) {}
     }
@@ -217,75 +234,18 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
 
     fun canUndo() = !history.isEmpty()
 
-    // NOTE: I have opted to set the defualt getReg to 32 for simplicity
-    fun getReg16(id: Int) = state.getReg16(id)
-    fun getReg(id: Int) = state.getReg32(id)
-    fun getReg64(id: Int) = state.getReg64(id)
-    fun getRegAny(id: Int) = state.getRegAny(id)
-    // I have set the return type to bigint because it will preserve the number regardelss of the size.
-    fun getRegActive(id: Int): BigInteger {
-        return when (settings.registerWidth) {
-            16 -> getReg16(id).toInt().toBigInteger()
-            32 -> getReg(id).toBigInteger()
-            64 -> getReg64(id).toBigInteger()
-            else -> getRegAny(id)
-        }
-    }
+    fun getReg(id: Int) = state.getReg(id)
 
-    fun setReg(id: Int, v: Short) {
-        preInstruction.add(RegisterDiff16(id, getReg16(id)))
-        state.setReg(id, v)
-        postInstruction.add(RegisterDiff16(id, getReg16(id)))
-    }
-
-    fun setReg(id: Int, v: Int) {
+    fun setReg(id: Int, v: Number) {
         preInstruction.add(RegisterDiff(id, getReg(id)))
         state.setReg(id, v)
         postInstruction.add(RegisterDiff(id, getReg(id)))
     }
 
-    fun setReg(id: Int, v: Long) {
-        preInstruction.add(RegisterDiff64(id, getReg64(id)))
-        state.setReg(id, v)
-        postInstruction.add(RegisterDiff64(id, getReg64(id)))
-    }
-
-    fun setReg(id: Int, v: BigInteger) {
-        preInstruction.add(RegisterDiffAny(id, getRegAny(id)))
-        state.setReg(id, v)
-        postInstruction.add(RegisterDiffAny(id, getRegAny(id)))
-    }
-
-    fun setRegActive(id: Int, v: BigInteger) {
-        return when (settings.registerWidth) {
-            16 -> setReg(id, v.toShort())
-            32 -> setReg(id, v.toInt())
-            64 -> setReg(id, v.toLong())
-            else -> setReg(id, v)
-        }
-    }
-
-    fun setRegNoUndo(id: Int, v: Short) {
+    fun setRegNoUndo(id: Int, v: Number) {
         state.setReg(id, v)
     }
 
-    fun setRegNoUndo(id: Int, v: Int) {
-        state.setReg(id, v)
-    }
-    fun setRegNoUndo(id: Int, v: Long) {
-        state.setReg(id, v)
-    }
-    fun setRegNoUndo(id: Int, v: BigInteger) {
-        state.setReg(id, v)
-    }
-    fun setRegActiveNoUndo(id: Int, v: BigInteger) {
-        return when (settings.registerWidth) {
-            16 -> setRegNoUndo(id, v.toShort())
-            32 -> setRegNoUndo(id, v.toInt())
-            64 -> setRegNoUndo(id, v.toLong())
-            else -> setRegNoUndo(id, v)
-        }
-    }
     fun getFReg(id: Int) = state.getFReg(id)
 
     fun setFReg(id: Int, v: Decimal) {
@@ -304,34 +264,24 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
     }
 
     /* TODO Make this more efficient while robust! */
-    fun atBreakpoint() = breakpoints[instOrderMapping[(state.pc - MemorySegments.TEXT_BEGIN).toBigInteger()]!!.toInt()] || ebreak
+    fun atBreakpoint() = breakpoints[instOrderMapping[(getPC() - MemorySegments.TEXT_BEGIN)]!!.toInt()] || ebreak
 
-    fun getPC() = state.pc
+    fun getPC() = state.getPC()
 
-    fun setPC(newPC: Int) {
-        preInstruction.add(PCDiff(state.pc))
-        state.pc = newPC
-        postInstruction.add(PCDiff(state.pc))
+    fun setPC(newPC: Number) {
+        preInstruction.add(PCDiff(getPC()))
+        state.setPC(newPC)
+        postInstruction.add(PCDiff(getPC()))
     }
 
-    fun incrementPC(inc: Int) {
-        preInstruction.add(PCDiff(state.pc))
-        state.pc += inc
-        postInstruction.add(PCDiff(state.pc))
+    fun incrementPC(inc: Number) {
+        preInstruction.add(PCDiff(getPC()))
+        state.incPC(inc)
+        postInstruction.add(PCDiff(getPC()))
     }
 
-    fun loadByte(addr: Short): Short = state.mem.loadByte(addr)
-    fun loadBytewCache(addr: Short): Short {
-        if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0) {
-            throw AlignmentError("Address: '" + Renderer.toHex(addr.toInt()) + "' is not BYTE aligned!")
-        }
-        preInstruction.add(CacheDiff(Address(addr.toInt(), MemSize.BYTE)))
-        state.cache.read(Address(addr.toInt(), MemSize.BYTE))
-        postInstruction.add(CacheDiff(Address(addr.toInt(), MemSize.BYTE)))
-        return this.loadByte(addr)
-    }
-    fun loadByte(addr: Int): Int = state.mem.loadByte(addr)
-    fun loadBytewCache(addr: Int): Int {
+    fun loadByte(addr: Number): Int = state.mem.loadByte(addr)
+    fun loadBytewCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
         }
@@ -340,29 +290,9 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         postInstruction.add(CacheDiff(Address(addr, MemSize.BYTE)))
         return this.loadByte(addr)
     }
-    fun loadByte(addr: Long): Long = state.mem.loadByte(addr)
-    fun loadBytewCache(addr: Long): Long {
-        if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0.toLong()) {
-            throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
-        }
-        preInstruction.add(CacheDiff(Address(addr.toInt(), MemSize.BYTE)))
-        state.cache.read(Address(addr.toInt(), MemSize.BYTE))
-        postInstruction.add(CacheDiff(Address(addr.toInt(), MemSize.BYTE)))
-        return this.loadByte(addr)
-    }
-    fun loadByte(addr: BigInteger): BigInteger = state.mem.loadByte(addr)
-    fun loadBytewCache(addr: BigInteger): BigInteger {
-        if (this.settings.alignedAddress && addr % MemSize.BYTE.size.toBigInteger() != 0.toBigInteger()) {
-            throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
-        }
-        preInstruction.add(CacheDiff(Address(addr.toInt(), MemSize.BYTE)))
-        state.cache.read(Address(addr.toInt(), MemSize.BYTE))
-        postInstruction.add(CacheDiff(Address(addr.toInt(), MemSize.BYTE)))
-        return this.loadByte(addr)
-    }
 
-    fun loadHalfWord(addr: Int): Int = state.mem.loadHalfWord(addr)
-    fun loadHalfWordwCache(addr: Int): Int {
+    fun loadHalfWord(addr: Number): Int = state.mem.loadHalfWord(addr)
+    fun loadHalfWordwCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.HALF.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not HALF WORD aligned!")
         }
@@ -372,8 +302,8 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         return this.loadHalfWord(addr)
     }
 
-    fun loadWord(addr: Int): Int = state.mem.loadWord(addr)
-    fun loadWordwCache(addr: Int): Int {
+    fun loadWord(addr: Number): Int = state.mem.loadWord(addr)
+    fun loadWordwCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.WORD.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not WORD aligned!")
         }
@@ -383,8 +313,8 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         return this.loadWord(addr)
     }
 
-    fun loadLong(addr: Int): Long = state.mem.loadLong(addr)
-    fun loadLongwCache(addr: Int): Long {
+    fun loadLong(addr: Number): Long = state.mem.loadLong(addr)
+    fun loadLongwCache(addr: Number): Long {
         if (this.settings.alignedAddress && addr % MemSize.LONG.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not LONG aligned!")
         }
@@ -394,40 +324,13 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         return this.loadLong(addr)
     }
 
-    fun storeByteActive(addr: BigInteger, value: BigInteger) {
-        return when (settings.registerWidth) {
-            16 -> storeByte(addr.toShort(), value.toShort())
-            32 -> storeByte(addr.toInt(), value.toInt())
-            64 -> storeByte(addr.toLong(), value.toLong())
-            else -> storeByte(addr, value)
-        }
-    }
-
-    fun storeByte(addr: Short, value: Short) {
-        preInstruction.add(MemoryDiff(addr.toInt(), loadWord(addr.toInt())))
-        state.mem.storeByte(addr, value)
-        postInstruction.add(MemoryDiff(addr.toInt(), loadWord(addr.toInt())))
-        this.storeTextOverrideCheck(addr.toInt(), value.toInt(), MemSize.BYTE)
-    }
-    fun storeByte(addr: Int, value: Int) {
+    fun storeByte(addr: Number, value: Number) {
         preInstruction.add(MemoryDiff(addr, loadWord(addr)))
         state.mem.storeByte(addr, value)
         postInstruction.add(MemoryDiff(addr, loadWord(addr)))
         this.storeTextOverrideCheck(addr, value, MemSize.BYTE)
     }
-    fun storeByte(addr: Long, value: Long) {
-        preInstruction.add(MemoryDiff(addr.toInt(), loadWord(addr.toInt())))
-        state.mem.storeByte(addr, value)
-        postInstruction.add(MemoryDiff(addr.toInt(), loadWord(addr.toInt())))
-        this.storeTextOverrideCheck(addr.toInt(), value.toInt(), MemSize.BYTE)
-    }
-    fun storeByte(addr: BigInteger, value: BigInteger) {
-        preInstruction.add(MemoryDiff(addr.toInt(), loadWord(addr.toInt())))
-        state.mem.storeByte(addr, value)
-        postInstruction.add(MemoryDiff(addr.toInt(), loadWord(addr.toInt())))
-        this.storeTextOverrideCheck(addr.toInt(), value.toInt(), MemSize.BYTE)
-    }
-    fun storeBytewCache(addr: Int, value: Int) {
+    fun storeBytewCache(addr: Number, value: Number) {
         if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
         }
@@ -478,7 +381,7 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         postInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
     }
 
-    fun storeTextOverrideCheck(addr: Int, value: Int, size: MemSize) {
+    fun storeTextOverrideCheck(addr: Number, value: Number, size: MemSize) {
         /*Here, we will check if we are writing to memory*/
         if (addr in (MemorySegments.TEXT_BEGIN until this.maxpc) || (addr + size.size - MemSize.BYTE.size) in (MemorySegments.TEXT_BEGIN until this.maxpc)) {
             try {
@@ -494,12 +397,12 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
         }
     }
 
-    fun getHeapEnd() = state.heapEnd
+    fun getHeapEnd() = state.getHeapEnd()
 
     fun addHeapSpace(bytes: Int) {
-        preInstruction.add(HeapSpaceDiff(state.heapEnd))
-        state.heapEnd += bytes
-        postInstruction.add(HeapSpaceDiff(state.heapEnd))
+        preInstruction.add(HeapSpaceDiff(state.getHeapEnd()))
+        state.incHeapEnd(bytes)
+        postInstruction.add(HeapSpaceDiff(state.getHeapEnd()))
     }
 
     private fun getInstructionLength(short0: Int): Int {
@@ -517,13 +420,13 @@ class Simulator(val linkedProgram: LinkedProgram, val VFS: VirtualFileSystem = V
     }
 
     fun getNextInstruction(): MachineCode {
-        var instruction = loadHalfWord(getPC())
-        val length = getInstructionLength(instruction)
+        var instruction: ULong = loadHalfWord(getPC()).toULong()
+        val length = getInstructionLength(instruction.toInt())
         for (i in 1 until length / 2) {
-            val short = loadHalfWord(getPC() + 2)
+            val short = loadHalfWord(getPC() + 2).toULong()
             instruction = (short shl 16 * i) or instruction
         }
-        val mcode = MachineCode(instruction)
+        val mcode = MachineCode(instruction.toLong())
         mcode.length = length
         return mcode
     }

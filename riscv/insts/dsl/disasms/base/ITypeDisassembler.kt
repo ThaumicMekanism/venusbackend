@@ -11,7 +11,7 @@ object ITypeDisassembler : InstructionDisassembler {
         val name = Instruction[mcode].name
         val rd = mcode[InstructionField.RD]
         val rs1 = mcode[InstructionField.RS1]
-        val imm = signExtend(mcode[InstructionField.IMM_11_0], 12)
+        val imm = signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12)
         return "$name x$rd x$rs1 $imm"
     }
 }

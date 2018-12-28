@@ -57,8 +57,8 @@ private fun openFile(sim: Simulator) {
      *
      * a0=13,a1=filename,a2=permissionbits -> a0=filedescriptor
      */
-    val filenameAddress = sim.getReg(Registers.a1)
-    val permissions = sim.getReg(Registers.a2)
+    val filenameAddress = sim.getReg(Registers.a1).toInt()
+    val permissions = sim.getReg(Registers.a2).toInt()
     val filename = getString(sim, filenameAddress)
     val fdID = sim.filesHandler.openFile(sim, filename, permissions)
     sim.setReg(Registers.a0, fdID)
@@ -73,9 +73,9 @@ private fun readFile(sim: Simulator) {
      *
      * a0=14, a1=filedescriptor, a2=where to store data, a3=amt to read -> a0=Number of items read
      */
-    val fdID = sim.getReg(Registers.a1)
-    val bufferAddress = sim.getReg(Registers.a2)
-    val size = sim.getReg(Registers.a3)
+    val fdID = sim.getReg(Registers.a1).toInt()
+    val bufferAddress = sim.getReg(Registers.a2).toInt()
+    val size = sim.getReg(Registers.a3).toInt()
     val data = sim.filesHandler.readFileDescriptor(fdID, size)
     var offset = 0
     if (data != null) {
@@ -93,10 +93,10 @@ private fun writeFile(sim: Simulator) {
     /**
      * a0=15, a1=filedescriptor, a2=buffer to read data, a3=amt to write, a4=size of each item -> a0=Number of items written
      */
-    val fdID = sim.getReg(Registers.a1)
-    val bufferAddress = sim.getReg(Registers.a2)
-    val size = sim.getReg(Registers.a3)
-    val sizeOfItem = sim.getReg(Registers.a4)
+    val fdID = sim.getReg(Registers.a1).toInt()
+    val bufferAddress = sim.getReg(Registers.a2).toInt()
+    val size = sim.getReg(Registers.a3).toInt()
+    val sizeOfItem = sim.getReg(Registers.a4).toInt()
     var offset = 0
     val sb = StringBuilder()
     while (offset < size) {
@@ -112,7 +112,7 @@ private fun closeFile(sim: Simulator) {
      * Flush the data written to the file back to where it came from.
      * a0=16, a1=filedescriptor -> ​0​ on success, EOF otherwise
      */
-    val fdID = sim.getReg(Registers.a1)
+    val fdID = sim.getReg(Registers.a1).toInt()
     val a0 = sim.filesHandler.closeFileDescriptor(fdID)
     sim.setReg(Registers.a0, a0)
 }
@@ -122,7 +122,7 @@ private fun fflush(sim: Simulator) {
      * Returns zero on success. Otherwise EOF is returned and the error indicator of the file stream is set.
      * a0=19, a1=filedescriptor -> a0=if end of file
      */
-    val fdID = sim.getReg(Registers.a1)
+    val fdID = sim.getReg(Registers.a1).toInt()
     val a0 = sim.filesHandler.flushFileDescriptor(fdID)
     sim.setReg(Registers.a0, a0)
 }
@@ -133,7 +133,7 @@ private fun feof(sim: Simulator) {
      *
      * a0=19, a1=filedescriptor -> a0=if end of file
      */
-    val fdID = sim.getReg(Registers.a1)
+    val fdID = sim.getReg(Registers.a1).toInt()
     val a0 = sim.filesHandler.getFileDescriptorEOF(fdID)
     sim.setReg(Registers.a0, a0)
 }
@@ -144,7 +144,7 @@ private fun ferror(sim: Simulator) {
      *
      * a0=20, a1=filedescriptor -> a0=if error occured
      */
-    val fdID = sim.getReg(Registers.a1)
+    val fdID = sim.getReg(Registers.a1).toInt()
     val a0 = sim.filesHandler.getFileDescriptorError(fdID)
     sim.setReg(Registers.a0, a0)
 }
@@ -162,14 +162,14 @@ private fun printInteger(sim: Simulator) {
 }
 
 private fun printString(sim: Simulator) {
-    val arg = sim.getReg(11)
+    val arg = sim.getReg(11).toInt()
     val s = getString(sim, arg)
         sim.ecallMsg += s
         Renderer.printConsole(s)
 }
 
 private fun sbrk(sim: Simulator) {
-    val bytes = sim.getReg(11)
+    val bytes = sim.getReg(11).toInt()
     if (bytes < 0) return
     sim.setReg(10, sim.getHeapEnd())
     sim.addHeapSpace(bytes)
@@ -196,11 +196,11 @@ private fun exitWithCode(sim: Simulator) {
 private fun getString(sim: Simulator, address: Int): String {
     var addr = address
     val s = StringBuilder()
-    var c = sim.loadByte(address)
+    var c = sim.loadByte(address).toInt()
     addr++
     while (c != 0) {
         s.append(c.toChar())
-        c = sim.loadByte(addr)
+        c = sim.loadByte(addr).toInt()
         addr++
     }
     return s.toString()

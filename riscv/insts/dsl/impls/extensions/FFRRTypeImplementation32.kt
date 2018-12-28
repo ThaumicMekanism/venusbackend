@@ -11,9 +11,9 @@ import venusbackend.simulator.Simulator
  */
 class FFRRTypeImplementation32(private val eval: (Decimal, Decimal) -> Int) : InstructionImplementation {
     override operator fun invoke(mcode: MachineCode, sim: Simulator) {
-        val rs1 = mcode[InstructionField.RS1]
-        val rs2 = mcode[InstructionField.RS2]
-        val rd = mcode[InstructionField.RD]
+        val rs1 = mcode[InstructionField.RS1].toInt()
+        val rs2 = mcode[InstructionField.RS2].toInt()
+        val rd = mcode[InstructionField.RD].toInt()
         val vrs1 = sim.getFReg(rs1)
         val vrs2 = sim.getFReg(rs2)
         sim.setReg(rd, eval(vrs1, vrs2))

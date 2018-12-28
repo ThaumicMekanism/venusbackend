@@ -2,7 +2,6 @@ package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.riscv.insts.dsl.LoadTypeInstruction
 import venusbackend.riscv.insts.dsl.impls.signExtend
-import venusbackend.simulator.Simulator
 
 val lh = LoadTypeInstruction(
         name = "lh",
@@ -10,7 +9,7 @@ val lh = LoadTypeInstruction(
         funct3 = 0b001,
 //        load16 = Simulator::loadHalfWordwCache,
 //        postLoad16 = { v -> signExtend(v, 16) },
-        load32 = Simulator::loadHalfWordwCache,
+        load32 = { sim, address -> sim.loadHalfWordwCache(address).toInt() },
         postLoad32 = { v -> signExtend(v, 16) }
 //        load64 = Simulator::loadHalfWordwCache,
 //        postLoad64 = { v -> signExtend(v, 16) },
