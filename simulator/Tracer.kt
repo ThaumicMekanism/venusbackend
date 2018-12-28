@@ -146,7 +146,7 @@ class Tracer(val sim: Simulator) {
                 traceStringBranchHelper(t)
             }
             if (t.branched && this.instFirst && this.twoStage) {
-                t.pc += 4
+//                t.pc += 4
             }
             if (this.tr.peak().jumped) {
                 if (!this.twoStage) {
