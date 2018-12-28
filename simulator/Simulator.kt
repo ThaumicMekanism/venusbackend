@@ -24,18 +24,18 @@ class Simulator(
 ) {
 
     // TODO make pc not rely on being an INT
-    private var maxpc = MemorySegments.TEXT_BEGIN
+    private var maxpc = MemorySegments.TEXT_BEGIN.toLong()
     private var cycles = 0
     private val history = History()
     private val preInstruction = ArrayList<Diff>()
     private val postInstruction = ArrayList<Diff>()
     private val breakpoints: Array<Boolean>
-    private var args = ArrayList<String>()
+    var args = ArrayList<String>()
     var ebreak = false
     var stdout = ""
     var filesHandler = FilesHandler(this)
-    val instOrderMapping = HashMap<Number, Number>()
-    val invInstOrderMapping = HashMap<Number, Number>()
+    val instOrderMapping = HashMap<Int, Number>()
+    val invInstOrderMapping = HashMap<Number, Int>()
 
     init {
         (state).getReg(1)
@@ -77,8 +77,12 @@ class Simulator(
         return this.maxpc
     }
 
+    fun incMaxPC(amount: Number) {
+        this.maxpc += amount.toLong()
+    }
+
     fun getInstAt(addr: Number): MachineCode {
-        val instnum = invInstOrderMapping[addr.toInt()]!!.toInt()
+        val instnum = invInstOrderMapping[addr]!!.toInt()
         return linkedProgram.prog.insts[instnum]
     }
 
@@ -128,7 +132,7 @@ class Simulator(
 
     fun removeAllArgsFromMem() {
         var sp = getReg(2)
-        while (sp < MemorySegments.STACK_BEGIN.toBigInteger() && settings.setRegesOnInit) {
+        while (sp < MemorySegments.STACK_BEGIN && settings.setRegesOnInit) {
             this.state.mem.removeByte(sp)
             sp++
             setReg(2, sp)
@@ -265,7 +269,11 @@ class Simulator(
     }
 
     /* TODO Make this more efficient while robust! */
-    fun atBreakpoint() = breakpoints[instOrderMapping[(getPC() - MemorySegments.TEXT_BEGIN)]!!.toInt()] || ebreak
+    fun atBreakpoint(): Boolean {
+        val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
+        val inst = invInstOrderMapping[location]!!
+        return ebreak || breakpoints[inst]
+    }
 
     fun getPC() = state.getPC()
 

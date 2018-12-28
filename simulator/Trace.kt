@@ -3,6 +3,7 @@ package venusbackend.simulator
 import venusbackend.div
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
+import venusbackend.simulator.Tracer.Companion.wordAddressed
 import kotlin.math.log2
 import kotlin.math.pow
 import kotlin.math.roundToInt

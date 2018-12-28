@@ -21,6 +21,10 @@ class Tracer(val sim: Simulator) {
     var tr = TraceEncapsulation()
     var twoStage = false
 
+    companion object {
+        var wordAddressed = false
+    }
+
     fun trace() {
         traceStart()
         while (!sim.isDone()) {
@@ -280,4 +284,3 @@ class TraceEncapsulation {
         return curLoc < trace.size
     }
 }
-var wordAddressed = false
