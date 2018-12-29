@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.r
 
-import venusbackend.riscv.insts.dsl.floating.FtRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.FtRTypeInstruction
 import kotlin.math.round
 
 val fcvtwd = FtRTypeInstruction(

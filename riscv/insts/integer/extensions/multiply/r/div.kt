@@ -1,6 +1,8 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
-import venusbackend.riscv.insts.dsl.RTypeInstruction
+import venusbackend.numbers.QuadWord
+import venusbackend.numbers.toQuadWord
+import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val div = RTypeInstruction(
         name = "div",
@@ -23,8 +25,8 @@ val div = RTypeInstruction(
             else a / b
         },
         eval128 = { a, b ->
-            if (b == 0.toLong()) -1
-            else if (a == Long.MIN_VALUE && b == (-1).toLong()) a
+            if (b == 0.toQuadWord()) (-1).toQuadWord()
+            else if (a == QuadWord.MIN_VALUE && b == (-1).toQuadWord()) a
             else a / b
         }
 )

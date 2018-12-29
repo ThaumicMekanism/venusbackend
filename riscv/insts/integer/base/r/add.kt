@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.r
 
-import venusbackend.riscv.insts.dsl.RTypeInstruction
+import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val add = RTypeInstruction(
         name = "add",

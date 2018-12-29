@@ -7,7 +7,7 @@ import venus.vfs.VirtualFileSystem
 import venusbackend.*
 import venusbackend.linker.LinkedProgram
 import venusbackend.riscv.*
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.floating.Decimal
 import venusbackend.simulator.diffs.*
 
@@ -408,7 +408,7 @@ class Simulator(
 
     fun getHeapEnd() = state.getHeapEnd()
 
-    fun addHeapSpace(bytes: Int) {
+    fun addHeapSpace(bytes: Number) {
         preInstruction.add(HeapSpaceDiff(state.getHeapEnd()))
         state.incHeapEnd(bytes)
         postInstruction.add(HeapSpaceDiff(state.getHeapEnd()))

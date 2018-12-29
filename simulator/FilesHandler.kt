@@ -2,7 +2,7 @@ package venusbackend.simulator
 
 import venus.vfs.VFSFile
 import venus.vfs.VFSType
-
+// Fixme make the fileshandler handle numbers and not Ints!
 class FilesHandler(sim: Simulator) {
     companion object {
         var EOF = -1

@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.dsl.disasms.base
 
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.InstructionDisassembler
 
 object ShiftImmediateDisassembler : InstructionDisassembler {

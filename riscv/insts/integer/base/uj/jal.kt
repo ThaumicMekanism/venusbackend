@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.integer.base.uj
 
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
 import venusbackend.riscv.insts.dsl.formats.OpcodeFormat
 import venusbackend.riscv.insts.dsl.getImmWarning

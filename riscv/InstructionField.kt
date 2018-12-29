@@ -1,16 +1,19 @@
 package venusbackend.riscv
 
-/** Describes how to get fields from RV32 instruction formats */
+/** Describes how to get fields from RV16/32/64 instruction formats */
 enum class InstructionField(val lo: Int, val hi: Int) {
     ENTIRE(0, 32),
+    HALF(0, 16),
     OPCODE(0, 7),
     OP2(0, 2),
     RD(7, 12),
     RS2P(2, 5),
     FUNCT3(12, 15),
+    CFUNCT3(13, 16),
     FUNCT2(25, 27),
     FUNCT(5, 7),
     FUNCT6(10, 16),
+    FUNCT4(12, 16),
     WIDTH(12, 15),
     RS1P(7, 10),
     RDP(7, 10),
@@ -21,6 +24,8 @@ enum class InstructionField(val lo: Int, val hi: Int) {
     FUNCT5(27, 32),
     RL(25, 26),
     AQ(26, 27),
+    IMM_b2_b6(2, 7),
+    IMM_b12(12, 13),
     IMM_11_0(20, 32),
     IMM_4_0(7, 12),
     IMM_11_5(25, 32),

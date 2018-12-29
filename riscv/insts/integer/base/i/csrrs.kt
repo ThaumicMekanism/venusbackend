@@ -1,7 +1,9 @@
 package venusbackend.riscv.insts.integer.base.i
 
+import venusbackend.numbers.QuadWord
+import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
 import venusbackend.riscv.insts.dsl.formats.FieldEqual
 import venusbackend.riscv.insts.dsl.formats.InstructionFormat
@@ -33,7 +35,13 @@ val csrrs = Instruction(
             sim.setReg(32, vrs1 or vcsr)
             sim.incrementPC(mcode.length)
         },
-        impl128 = NoImplementation,
+        impl128 = RawImplementation { mcode, sim ->
+            val vrs1 = sim.getReg(mcode[InstructionField.RS1].toInt()).toQuadWord()
+            val vcsr = sim.getReg(32).toQuadWord()
+            sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
+            sim.setReg(32, vrs1 or vcsr)
+            sim.incrementPC(mcode.length)
+        },
         disasm = RawDisassembler {
             val dest = it[InstructionField.RD]
             val source = it[InstructionField.RS1]

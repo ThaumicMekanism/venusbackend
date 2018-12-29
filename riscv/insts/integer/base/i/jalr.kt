@@ -1,8 +1,9 @@
 package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.ITypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
@@ -49,7 +50,15 @@ val jalr = Instruction(
             sim.setPC(((vrs1 + imm) shr 1) shl 1)
             sim.jumped = true
         },
-        impl128 = NoImplementation,
+        impl128 = RawImplementation { mcode, sim ->
+            val rd = mcode[InstructionField.RD].toInt()
+            val rs1 = mcode[InstructionField.RS1].toInt()
+            val imm = signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12).toQuadWord()
+            val vrs1 = sim.getReg(rs1).toQuadWord()
+            sim.setReg(rd, sim.getPC().toQuadWord() + mcode.length)
+            sim.setPC(((vrs1 + imm) shr 1) shl 1)
+            sim.jumped = true
+        },
         disasm = RawDisassembler { mcode ->
             val rd = mcode[InstructionField.RD]
             val rs1 = mcode[InstructionField.RS1]

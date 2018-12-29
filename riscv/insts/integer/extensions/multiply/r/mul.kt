@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
-import venusbackend.riscv.insts.dsl.RTypeInstruction
+import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val mul = RTypeInstruction(
         name = "mul",

@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.riscv.InstructionField
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
 import venusbackend.riscv.insts.dsl.formats.FieldEqual
 import venusbackend.riscv.insts.dsl.formats.InstructionFormat

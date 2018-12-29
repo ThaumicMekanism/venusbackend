@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.riscv.insts.dsl.ITypeInstruction
+import venusbackend.riscv.insts.dsl.types.ITypeInstruction
 
 val addi = ITypeInstruction(
         name = "addi",

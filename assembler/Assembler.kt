@@ -5,7 +5,7 @@ import venusbackend.assembler.pseudos.checkArgsLength
 import venus.Renderer
 import venusbackend.riscv.*
 import venusbackend.riscv.insts.InstructionNotFoundError
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.getImmWarning
 import venusbackend.riscv.insts.dsl.relocators.Relocator
 import venusbackend.simulator.SimulatorError

@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.r
 
-import venusbackend.riscv.insts.dsl.floating.FRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.FRTypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 
 val fmuld = FRTypeInstruction(

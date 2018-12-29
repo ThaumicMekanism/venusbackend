@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.r
 
-import venusbackend.riscv.insts.dsl.floating.RtFTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.RtFTypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 import kotlin.math.abs
 

@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.extensions.atomic.r
 
-import venusbackend.riscv.insts.dsl.AMORTypeInstruction
+import venusbackend.riscv.insts.dsl.types.AMORTypeInstruction
 
 /*todo test if this 'unsigned' conversion works*/
 val amomaxuweval32 = { data: Int, vrs2: Int -> maxOf(data xor Int.MIN_VALUE, vrs2 xor Int.MIN_VALUE) }

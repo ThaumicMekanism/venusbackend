@@ -1,5 +1,6 @@
-package venusbackend.riscv.insts.dsl
+package venusbackend.riscv.insts.dsl.types
 
+import venusbackend.numbers.QuadWord
 import venusbackend.riscv.insts.dsl.disasms.base.LoadDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.ITypeFormat
 import venusbackend.riscv.insts.dsl.impls.base.b32.LoadImplementation32
@@ -18,8 +19,8 @@ class LoadTypeInstruction(
     postLoad32: (Int) -> Int = { it },
     load64: (Simulator, Long) -> Long = { _, _ -> throw NotImplementedError("no rv64") },
     postLoad64: (Long) -> Long = { it },
-    load128: (Simulator, Long) -> Long = { _, _ -> throw NotImplementedError("no rv128") },
-    postLoad128: (Long) -> Long = { it }
+    load128: (Simulator, QuadWord) -> QuadWord = { _, _ -> throw NotImplementedError("no rv128") },
+    postLoad128: (QuadWord) -> QuadWord = { it }
 ) : Instruction(
         name = name,
         format = ITypeFormat(opcode, funct3),

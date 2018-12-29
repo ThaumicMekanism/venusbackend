@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.i
 
-import venusbackend.riscv.insts.dsl.floating.FITypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.FITypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 
 val fld = FITypeInstruction(

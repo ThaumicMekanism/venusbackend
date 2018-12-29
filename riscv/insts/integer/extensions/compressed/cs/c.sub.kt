@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.extensions.compressed.cs
 
-import venusbackend.riscv.insts.dsl.CSTypeInstruction
+import venusbackend.riscv.insts.dsl.types.compressed.CSTypeInstruction
 
 val csub = CSTypeInstruction(
         name = "c.sub",

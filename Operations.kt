@@ -1,49 +1,51 @@
 package venusbackend
 
+import venusbackend.numbers.toQuadWord
+
 operator fun Number.plus(other: Number): Number {
-    return ((this.toLong()).plus(other.toLong()))
+    return ((this.toQuadWord()).plus(other.toQuadWord()))
 }
 
 operator fun Number.minus(other: Number): Number {
-    return (this.toLong()).minus(other.toLong())
+    return (this.toQuadWord()).minus(other.toQuadWord())
 }
 
 operator fun Number.times(other: Number): Number {
-    return (this.toLong().times(other.toLong()))
+    return (this.toQuadWord().times(other.toQuadWord()))
 }
 
 operator fun Number.div(other: Number): Number {
-    return ((this.toLong()).div(other.toLong()))
+    return ((this.toQuadWord()).div(other.toQuadWord()))
 }
 
 operator fun Number.inc(): Number {
-    return ((this.toLong()).inc())
+    return ((this.toQuadWord()).inc())
 }
 
 operator fun Number.compareTo(other: Number): Int {
-    return ((this.toLong()).compareTo((other.toLong())))
+    return ((this.toQuadWord()).compareTo((other.toQuadWord())))
 }
 
 infix fun Number.shr(other: Number): Number {
-    return ((this.toLong()).shr(other.toInt()))
+    return ((this.toQuadWord()).shr(other.toInt()))
 }
 
 infix fun Number.ushr(other: Number): Number {
-    return ((this.toLong()).ushr(other.toInt()))
+    return ((this.toQuadWord()).ushr(other.toInt()))
 }
 
 infix fun Number.shl(other: Number): Number {
-    return ((this.toLong()).shl(other.toInt()))
+    return ((this.toQuadWord()).shl(other.toInt()))
 }
 
 operator fun Number.rem(other: Number): Number {
-    return ((this.toLong()).rem(other.toLong()))
+    return ((this.toQuadWord()).rem(other.toQuadWord()))
 }
 
 infix fun Number.and(other: Number): Number {
-    return ((this.toLong()).and((other.toLong())))
+    return ((this.toQuadWord()).and((other.toQuadWord())))
 }
 
 infix fun Number.or(other: Number): Number {
-    return ((this.toLong()).or((other.toLong())))
+    return ((this.toQuadWord()).or((other.toQuadWord())))
 }

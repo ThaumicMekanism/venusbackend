@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.integer.base.r
 
-import venusbackend.riscv.insts.dsl.RTypeInstruction
+import venusbackend.numbers.toQuadWord
+import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val slt = RTypeInstruction(
         name = "slt",
@@ -10,5 +11,5 @@ val slt = RTypeInstruction(
         eval16 = { a, b -> if (a < b) 1 else 0 },
         eval32 = { a, b -> if (a < b) 1 else 0 },
         eval64 = { a, b -> if (a < b) 1 else 0 },
-        eval128 = { a, b -> if (a < b) 1 else 0 }
+        eval128 = { a, b -> if (a < b) 1.toQuadWord() else 0.toQuadWord() }
 )

@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.riscv.insts.dsl.ShiftImmediateInstruction
+import venusbackend.numbers.toQuadWord
+import venusbackend.riscv.insts.dsl.types.ShiftImmediateInstruction
 
 val slli = ShiftImmediateInstruction(
         name = "slli",
@@ -9,5 +10,5 @@ val slli = ShiftImmediateInstruction(
         eval16 = { a, b -> if (b == 0.toShort()) a else ((a.toInt() shl b.toInt()).toShort()) },
         eval32 = { a, b -> if (b == 0) a else (a shl b) },
         eval64 = { a, b -> if (b == 0.toLong()) a else (a shl b.toInt()) },
-        eval128 = { a, b -> if (b == 0.toLong()) a else (a shl b.toInt()) }
+        eval128 = { a, b -> if (b == 0.toQuadWord()) a else (a shl b.toInt()) }
 )

@@ -1,4 +1,4 @@
-package venusbackend.riscv.insts.dsl
+package venusbackend.riscv.insts.dsl.types
 
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.dsl.disasms.base.UTypeDisassembler

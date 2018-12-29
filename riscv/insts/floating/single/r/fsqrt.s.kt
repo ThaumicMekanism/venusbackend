@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.single.r
 
-import venusbackend.riscv.insts.dsl.floating.FRRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.FRRTypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 import kotlin.math.sqrt
 

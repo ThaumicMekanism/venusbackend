@@ -1,10 +1,14 @@
 package venusbackend.riscv.insts.integer.base.i
 
 import venus.Renderer
+import venusbackend.compareTo
+import venusbackend.inc
+import venusbackend.numbers.QuadWord
+import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MemorySegments
 import venusbackend.riscv.Registers
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
 import venusbackend.riscv.insts.dsl.formats.FieldEqual
 import venusbackend.riscv.insts.dsl.formats.InstructionFormat
@@ -14,7 +18,7 @@ import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
 
-val ecall = Instruction(
+val ecall = Instruction( // Fixme The long and quadword are only build for a 32 bit system!
         name = "ecall",
         format = InstructionFormat(4,
                 listOf(FieldEqual(InstructionField.ENTIRE, 0b000000000000_00000_000_00000_1110011))
@@ -67,7 +71,29 @@ val ecall = Instruction(
                 sim.incrementPC(mcode.length)
             }
         },
-        impl128 = NoImplementation,
+        impl128 = RawImplementation { mcode, sim ->
+            val whichCall = sim.getReg(10).toQuadWord()
+            when (whichCall) {
+                QuadWord(1) -> printInteger(sim)
+                QuadWord(4) -> printString(sim)
+                QuadWord(9) -> sbrk(sim)
+                QuadWord(10) -> exit(sim)
+                QuadWord(11) -> printChar(sim)
+                QuadWord(13) -> openFile(sim)
+                QuadWord(14) -> readFile(sim)
+                QuadWord(15) -> writeFile(sim)
+                QuadWord(16) -> closeFile(sim)
+                QuadWord(17) -> exitWithCode(sim)
+                QuadWord(18) -> fflush(sim)
+                QuadWord(19) -> feof(sim)
+                QuadWord(20) -> ferror(sim)
+                QuadWord(34) -> printHex(sim)
+                else -> Renderer.printConsole("Invalid ecall $whichCall")
+            }
+            if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17))) {
+                sim.incrementPC(mcode.length)
+            }
+        },
         disasm = RawDisassembler { "ecall" }
 )
 
@@ -184,14 +210,14 @@ private fun printInteger(sim: Simulator) {
 }
 
 private fun printString(sim: Simulator) {
-    val arg = sim.getReg(11).toInt()
+    val arg = sim.getReg(11)
     val s = getString(sim, arg)
         sim.ecallMsg += s
         Renderer.printConsole(s)
 }
 
 private fun sbrk(sim: Simulator) {
-    val bytes = sim.getReg(11).toInt()
+    val bytes = sim.getReg(11)
     if (bytes < 0) return
     sim.setReg(10, sim.getHeapEnd())
     sim.addHeapSpace(bytes)
@@ -199,7 +225,7 @@ private fun sbrk(sim: Simulator) {
 
 private fun exit(sim: Simulator) {
     sim.setPC(MemorySegments.STATIC_BEGIN)
-    // sim.ecallMsg = "exiting the venusbackend.simulator"
+    // sim.ecallMsg = "exiting the simulator"
 }
 
 private fun printChar(sim: Simulator) {
@@ -215,14 +241,14 @@ private fun exitWithCode(sim: Simulator) {
     Renderer.printConsole("\nExited with error code $retVal\n")
 }
 
-private fun getString(sim: Simulator, address: Int): String {
+private fun getString(sim: Simulator, address: Number): String {
     var addr = address
     val s = StringBuilder()
-    var c = sim.loadByte(address).toInt()
+    var c = sim.loadByte(address)
     addr++
     while (c != 0) {
         s.append(c.toChar())
-        c = sim.loadByte(addr).toInt()
+        c = sim.loadByte(addr)
         addr++
     }
     return s.toString()

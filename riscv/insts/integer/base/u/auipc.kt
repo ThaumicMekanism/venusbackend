@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.integer.base.u
 
 import venusbackend.riscv.InstructionField
-import venusbackend.riscv.insts.dsl.UTypeInstruction
+import venusbackend.riscv.insts.dsl.types.UTypeInstruction
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
 
 val auipc = UTypeInstruction(

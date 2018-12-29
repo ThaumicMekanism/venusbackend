@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.sb
 
-import venusbackend.riscv.insts.dsl.BTypeInstruction
+import venusbackend.riscv.insts.dsl.types.BTypeInstruction
 
 val blt = BTypeInstruction(
         name = "blt",

@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.single.r
 
-import venusbackend.riscv.insts.dsl.floating.FtRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.FtRTypeInstruction
 import kotlin.math.abs
 import kotlin.math.round
 

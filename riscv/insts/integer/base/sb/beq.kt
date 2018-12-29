@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.sb
 
-import venusbackend.riscv.insts.dsl.BTypeInstruction
+import venusbackend.riscv.insts.dsl.types.BTypeInstruction
 
 val beq = BTypeInstruction(
         name = "beq",

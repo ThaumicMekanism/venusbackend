@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.dsl.disasms.extensions
 
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.InstructionDisassembler
 import venusbackend.riscv.insts.dsl.impls.base.b32.constructStoreImmediate
 

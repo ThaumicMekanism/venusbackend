@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.floating.double.r
 
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.floating.RtFTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.RtFTypeInstruction
 
 val fmvdx = RtFTypeInstruction(
         name = "fmv.d.x",

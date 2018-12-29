@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.single.r
 
-import venusbackend.riscv.insts.dsl.floating.F3RTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.F3RTypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 
 /*Single-Precision*/

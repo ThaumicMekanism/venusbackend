@@ -1,4 +1,4 @@
-package venusbackend.riscv.insts.dsl
+package venusbackend.riscv.insts.dsl.types
 
 import venusbackend.assembler.AssemblerError
 import venusbackend.riscv.MachineCode

@@ -1,5 +1,6 @@
-package venusbackend.riscv.insts.dsl
+package venusbackend.riscv.insts.dsl.types
 
+import venusbackend.numbers.QuadWord
 import venusbackend.riscv.insts.dsl.disasms.base.STypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.base.STypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
@@ -15,7 +16,7 @@ class STypeInstruction(
     store16: (Simulator, Short, Short) -> Unit = { _, _, _ -> throw NotImplementedError("no rv16") },
     store32: (Simulator, Int, Int) -> Unit,
     store64: (Simulator, Long, Long) -> Unit = { _, _, _ -> throw NotImplementedError("no rv64") },
-    store128: (Simulator, Long, Long) -> Unit = { _, _, _ -> throw NotImplementedError("no rv128") }
+    store128: (Simulator, QuadWord, QuadWord) -> Unit = { _, _, _ -> throw NotImplementedError("no rv128") }
 ) : Instruction(
         name = name,
         format = STypeFormat(opcode, funct3),

@@ -1,6 +1,8 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
-import venusbackend.riscv.insts.dsl.RTypeInstruction
+import venusbackend.numbers.QuadWord
+import venusbackend.numbers.toQuadWord
+import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val rem = RTypeInstruction(
         name = "rem",
@@ -23,8 +25,8 @@ val rem = RTypeInstruction(
             else a % b
         },
         eval128 = { a, b ->
-            if (b == 0.toLong()) a
-            else if (a == Long.MIN_VALUE && b == (-1).toLong()) 0
+            if (b == 0.toQuadWord()) a
+            else if (a == QuadWord.MIN_VALUE && b == (-1).toQuadWord()) 0.toQuadWord()
             else a % b
         }
 )

@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
-import venusbackend.riscv.insts.dsl.RTypeInstruction
+import venusbackend.numbers.toQuadWord
+import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val divu = RTypeInstruction(
         name = "divu",
@@ -29,7 +30,7 @@ val divu = RTypeInstruction(
         eval128 = { a, b ->
             val x = a shl 128 ushr 128
             val y = b shl 128 ushr 128
-            if (y == 0L) a
+            if (y == 0.toQuadWord()) a
             else (x / y)
         }
 )

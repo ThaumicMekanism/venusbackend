@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.dsl
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.numbers.QuadWord
 import venusbackend.riscv.userStringToInt
 import kotlin.math.ceil
 import kotlin.math.log2
@@ -54,4 +55,8 @@ internal fun compareUnsigned(v1: Int, v2: Int): Int {
 
 internal fun compareUnsignedLong(v1: Long, v2: Long): Int {
     return (v1 xor Long.MIN_VALUE).compareTo(v2 xor Long.MIN_VALUE)
+}
+
+internal fun compareUnsignedQuadWord(v1: QuadWord, v2: QuadWord): Int {
+    return (v1 xor QuadWord.MIN_VALUE).compareTo(v2 xor QuadWord.MIN_VALUE)
 }

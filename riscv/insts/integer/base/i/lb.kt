@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.riscv.insts.dsl.LoadTypeInstruction
+import venusbackend.numbers.toQuadWord
+import venusbackend.riscv.insts.dsl.types.LoadTypeInstruction
 import venusbackend.riscv.insts.dsl.impls.signExtend
 
 val lb = LoadTypeInstruction(
@@ -12,7 +13,7 @@ val lb = LoadTypeInstruction(
         load32 = { sim, address -> sim.loadBytewCache(address).toInt() },
         postLoad32 = { v -> signExtend(v, 8) },
         load64 = { sim, address -> sim.loadBytewCache(address).toLong() },
-        postLoad64 = { v -> signExtend(v.toInt(), 8).toLong() }
-//        load128 = NoImplementation,
-//        postLoad128 = NoImplementation
+        postLoad64 = { v -> signExtend(v.toInt(), 8).toLong() },
+        load128 = { sim, address -> sim.loadBytewCache(address).toQuadWord() },
+        postLoad128 = { v -> signExtend(v.toInt(), 8).toQuadWord() }
 )

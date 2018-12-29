@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.floating.double.r
 
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.floating.FtRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.floating.FtRTypeInstruction
 
 val fmvxd = FtRTypeInstruction(
         name = "fmv.x.d",

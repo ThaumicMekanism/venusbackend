@@ -1,6 +1,6 @@
-package venusbackend.riscv.insts.dsl.floating
+package venusbackend.riscv.insts.dsl.types.floating
 
-import venusbackend.riscv.insts.dsl.Instruction
+import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.extensions.RFRTypeDisassembler
 import venusbackend.riscv.insts.dsl.formats.extensions.FSRS2TypeFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
