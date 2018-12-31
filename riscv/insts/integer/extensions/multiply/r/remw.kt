@@ -1,6 +1,5 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
-import venusbackend.numbers.QuadWord
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.InstructionNotSupportedError
 import venusbackend.riscv.insts.dsl.types.RTypeInstruction

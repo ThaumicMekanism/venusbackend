@@ -1,8 +1,6 @@
 package venusbackend.riscv.insts.integer.base.s
 
-import venusbackend.riscv.insts.InstructionNotSupportedError
 import venusbackend.riscv.insts.dsl.types.STypeInstruction
-import venusbackend.simulator.Simulator
 
 val sh = STypeInstruction(
         name = "sh",

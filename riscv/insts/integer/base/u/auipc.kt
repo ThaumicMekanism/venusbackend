@@ -4,7 +4,6 @@ import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.insts.InstructionNotSupportedError
 import venusbackend.riscv.insts.dsl.types.UTypeInstruction
-import venusbackend.riscv.insts.dsl.impls.NoImplementation
 
 val auipc = UTypeInstruction(
         name = "auipc",

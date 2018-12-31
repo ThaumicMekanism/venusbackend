@@ -1,6 +1,5 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.numbers.QuadWord
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.insts.dsl.types.Instruction

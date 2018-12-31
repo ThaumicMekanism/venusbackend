@@ -18,7 +18,8 @@ import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
 
-val ecall = Instruction( // Fixme The long and quadword are only build for a 32 bit system!
+val ecall = Instruction(
+    // Fixme The long and quadword are only build for a 32 bit system!
         name = "ecall",
         format = InstructionFormat(4,
                 listOf(FieldEqual(InstructionField.ENTIRE, 0b000000000000_00000_000_00000_1110011))

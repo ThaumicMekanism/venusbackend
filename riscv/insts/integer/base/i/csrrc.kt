@@ -1,6 +1,5 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.numbers.QuadWord
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.insts.dsl.types.Instruction
@@ -35,7 +34,7 @@ val csrrc = Instruction(
             sim.setReg(32, vrs1.inv() and vcsr)
             sim.incrementPC(mcode.length)
         },
-        impl128 = RawImplementation {mcode, sim ->
+        impl128 = RawImplementation { mcode, sim ->
             val vrs1 = sim.getReg(mcode[InstructionField.RS1].toInt()).toQuadWord()
             val vcsr = sim.getReg(32).toQuadWord()
             sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
