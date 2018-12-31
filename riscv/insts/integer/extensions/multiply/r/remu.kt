@@ -1,5 +1,8 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
+import venusbackend.numbers.QuadWord
+import venusbackend.numbers.toDoubleQuadWord
+import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val remu = RTypeInstruction(
@@ -18,17 +21,17 @@ val remu = RTypeInstruction(
             val y = b.toLong() shl 32 ushr 32
             if (b == 0) a
             else (x % y).toInt()
+        },
+        eval64 = { a, b ->
+            val x = a.toQuadWord() shl 32 ushr 32
+            val y = b.toQuadWord() shl 32 ushr 32
+            if (b == 0L) a
+            else (x % y).toLong()
+        },
+        eval128 = { a, b ->
+            val x = a.toDoubleQuadWord() shl 32 ushr 32
+            val y = b.toDoubleQuadWord() shl 32 ushr 32
+            if (b == QuadWord()) a
+            else (x % y).toQuadWord()
         }
-//        eval64 = { a, b ->
-//            val x = a.toLong() shl 32 ushr 32
-//            val y = b.toLong() shl 32 ushr 32
-//            if (b == 0) a
-//            else (x % y).toInt()
-//        },
-//        eval128 = { a, b ->
-//            val x = a.toLong() shl 32 ushr 32
-//            val y = b.toLong() shl 32 ushr 32
-//            if (b == 0) a
-//            else (x % y).toInt()
-//        }
 )

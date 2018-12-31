@@ -1,5 +1,7 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
+import venusbackend.numbers.QuadWord
+import venusbackend.numbers.toDoubleQuadWord
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
@@ -20,17 +22,17 @@ val divu = RTypeInstruction(
             if (y == 0L) a
             else (x / y).toInt()
         },
-        /*FIXME 64 and 128 need to be able to convert to larger things that LONG*/
         eval64 = { a, b ->
-            val x = a shl 64 ushr 64
-            val y = b shl 64 ushr 64
-            if (y == 0L) a
-            else (x / y)
+            val x = a.toQuadWord() shl 64 ushr 64
+            val y = b.toQuadWord() shl 64 ushr 64
+            if (y == QuadWord()) a
+            else (x / y).toLong()
         },
+        /*FIXME 128 need to be able to convert to larger things that LONG*/
         eval128 = { a, b ->
-            val x = a shl 128 ushr 128
-            val y = b shl 128 ushr 128
-            if (y == 0.toQuadWord()) a
-            else (x / y)
+            val x = a.toDoubleQuadWord() shl 128 ushr 128
+            val y = b.toDoubleQuadWord() shl 128 ushr 128
+            if (y == 0.toDoubleQuadWord()) a
+            else (x / y).toQuadWord()
         }
 )

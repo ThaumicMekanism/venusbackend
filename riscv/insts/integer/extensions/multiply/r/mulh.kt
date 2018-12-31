@@ -1,5 +1,7 @@
 package venusbackend.riscv.insts.integer.extensions.multiply.r
 
+import venusbackend.numbers.toDoubleQuadWord
+import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.dsl.types.RTypeInstruction
 
 val mulh = RTypeInstruction(
@@ -16,15 +18,15 @@ val mulh = RTypeInstruction(
             val x = a.toLong()
             val y = b.toLong()
             ((x * y) ushr 32).toInt()
+        },
+        eval64 = { a, b ->
+            val x = a.toQuadWord()
+            val y = b.toQuadWord()
+            ((x * y) ushr 64).toLong()
+        },
+        eval128 = { a, b ->
+            val x = a.toDoubleQuadWord()
+            val y = b.toDoubleQuadWord()
+            ((x * y) ushr 128).toQuadWord()
         }
-//        eval64 = { a, b ->
-//            val x = a.toLong()
-//            val y = b.toLong()
-//            ((x * y) ushr 64).toInt()
-//        }
-//        eval128 = { a, b ->
-//            val x = a.toLong()
-//            val y = b.toLong()
-//            ((x * y) ushr 128).toInt()
-//        }
 )
