@@ -390,6 +390,25 @@ class Simulator(
         postInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
     }
 
+    fun storeLong(addr: Number, value: Number) {
+        preInstruction.add(MemoryDiff(addr, loadLong(addr)))
+        state.mem.storeLong(addr, value)
+        postInstruction.add(MemoryDiff(addr, loadLong(addr)))
+        this.storeTextOverrideCheck(addr, value, MemSize.LONG)
+    }
+    fun storeLongwCache(addr: Number, value: Number) {
+        if (this.settings.alignedAddress && addr % MemSize.LONG.size != 0) {
+            throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not long aligned!")
+        }
+        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..this.maxpc) {
+            throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
+        }
+        preInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
+        state.cache.write(Address(addr, MemSize.LONG))
+        this.storeLong(addr, value)
+        postInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
+    }
+
     fun storeTextOverrideCheck(addr: Number, value: Number, size: MemSize) {
         /*Here, we will check if we are writing to memory*/
         if (addr in (MemorySegments.TEXT_BEGIN until this.maxpc) || (addr + size.size - MemSize.BYTE.size) in (MemorySegments.TEXT_BEGIN until this.maxpc)) {

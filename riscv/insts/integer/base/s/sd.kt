@@ -7,12 +7,16 @@ val sd = STypeInstruction(
         name = "sd",
         opcode = 0b0100011,
         funct3 = 0b011,
-//        store16 = Simulator::storeWordwCache,
-        store32 = { sim, a, b ->
-            throw InstructionNotSupportedError("SD is not supported by 32 bit systems!")
+        store16 = { sim, address, value ->
+            throw InstructionNotSupportedError("sd is not supported on 32 bit systems!")
         },
-        store64 = { sim, a, b ->
-            sim.storeWordwCache(a, b)
+        store32 = { sim, address, value ->
+            throw InstructionNotSupportedError("sd is not supported on 64 bit systems!")
+        },
+        store64 = { sim, address, value ->
+            sim.storeLongwCache(address, value)
+        },
+        store128 = { sim, address, value ->
+            sim.storeLongwCache(address, value)
         }
-//        store128 = Simulator::storeWordwCache
 )

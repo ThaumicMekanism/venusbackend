@@ -1,5 +1,6 @@
 package venusbackend.riscv.insts.integer.base.uj
 
+import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.dsl.types.Instruction
@@ -52,7 +53,13 @@ val jal = Instruction(
             sim.incrementPC(imm)
             sim.jumped = true
         },
-        impl128 = NoImplementation,
+        impl128 = RawImplementation { mcode, sim ->
+            val rd = mcode[InstructionField.RD].toInt()
+            val imm = constructJALImmediate(mcode).toQuadWord()
+            sim.setReg(rd, sim.getPC().toQuadWord() + mcode.length)
+            sim.incrementPC(imm)
+            sim.jumped = true
+        },
         disasm = RawDisassembler { mcode ->
             val rd = mcode[InstructionField.RD]
             val imm = constructJALImmediate(mcode)
