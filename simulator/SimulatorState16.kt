@@ -9,6 +9,7 @@ class SimulatorState16 : SimulatorState {
     private val regs16 = Array(33) { 0.toShort() }
     private val fregs = Array(33) { Decimal() }
     private var pc: Short = 0
+    private var maxpc: Short = MemorySegments.TEXT_BEGIN.toShort()
     private var heapEnd = MemorySegments.HEAP_BEGIN.toShort()
 
     override val registerWidth = 16
@@ -22,6 +23,15 @@ class SimulatorState16 : SimulatorState {
     }
     override fun incPC(amount: Number) {
         this.pc = (this.pc + amount.toShort()).toShort()
+    }
+    override fun setMaxPC(location: Number) {
+        this.maxpc = location.toShort()
+    }
+    override fun getMaxPC(): Number {
+        return this.maxpc
+    }
+    override fun incMaxPC(amount: Number) {
+        this.maxpc = (this.maxpc + amount.toShort()).toShort()
     }
     override fun getReg(i: Int) = regs16[i]
     override fun setReg(i: Int, v: Number) { if (i != 0) regs16[i] = v.toShort() }

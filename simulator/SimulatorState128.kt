@@ -11,6 +11,7 @@ class SimulatorState128 : SimulatorState {
     private val regs128 = Array(33) { QuadWord() }
     private val fregs = Array(33) { Decimal() }
     private var pc: QuadWord = QuadWord()
+    private var maxpc: QuadWord = MemorySegments.TEXT_BEGIN.toQuadWord()
     private var heapEnd = MemorySegments.HEAP_BEGIN.toQuadWord()
 
     override val registerWidth = 128
@@ -24,6 +25,15 @@ class SimulatorState128 : SimulatorState {
     }
     override fun incPC(amount: Number) {
         this.pc += amount.toQuadWord()
+    }
+    override fun setMaxPC(location: Number) {
+        this.maxpc = location.toQuadWord()
+    }
+    override fun getMaxPC(): Number {
+        return this.maxpc
+    }
+    override fun incMaxPC(amount: Number) {
+        this.maxpc = (this.maxpc + amount.toQuadWord()).toQuadWord()
     }
     override fun getReg(i: Int) = regs128[i]
     override fun setReg(i: Int, v: Number) { if (i != 0) regs128[i] = v.toQuadWord() }

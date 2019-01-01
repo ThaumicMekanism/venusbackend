@@ -1,6 +1,5 @@
 package venusbackend.numbers
 
-import kotlin.experimental.and
 import kotlin.math.sign
 
 class QuadWord(var int0: Int = 0, var int1: Int = 0, var int2: Int = 0, var int3: Int = 0) : Number(), Comparable<QuadWord> {
@@ -325,8 +324,8 @@ class QuadWord(var int0: Int = 0, var int1: Int = 0, var int2: Int = 0, var int3
     public infix fun shr(bitCount: Int): QuadWord {
         val qw = this.copy()
         if (bitCount >= 64) {
-            return if (this.int3.sign == 1) {
-                QuadWord(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE)
+            return if (this.int3.sign == -1) {
+                QuadWord(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
             } else {
                 QuadWord(0, 0, 0, 0)
             }
@@ -522,7 +521,7 @@ fun Number.toQuadWord(): QuadWord {
 
 fun Byte.toQuadWord(): QuadWord {
     val num = this.toInt()
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         QuadWord(int0 = num, int1 = Int.MIN_VALUE, int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         QuadWord(int0 = num)
@@ -531,7 +530,7 @@ fun Byte.toQuadWord(): QuadWord {
 
 fun Short.toQuadWord(): QuadWord {
     val num = this.toInt()
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         QuadWord(int0 = num, int1 = Int.MIN_VALUE, int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         QuadWord(int0 = num)
@@ -540,7 +539,7 @@ fun Short.toQuadWord(): QuadWord {
 
 fun Int.toQuadWord(): QuadWord {
     val num = this
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         QuadWord(int0 = num, int1 = Int.MIN_VALUE, int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         QuadWord(int0 = num)
@@ -549,7 +548,7 @@ fun Int.toQuadWord(): QuadWord {
 
 fun Long.toQuadWord(): QuadWord {
     val num = this
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         QuadWord(int0 = num.toInt(), int1 = (num shr 32).toInt(), int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         QuadWord(int0 = num.toInt(), int1 = (num shr 32).toInt())

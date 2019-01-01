@@ -10,6 +10,9 @@ interface SimulatorState {
     fun getPC(): Number
     fun setPC(location: Number)
     fun incPC(amount: Number)
+    fun getMaxPC(): Number
+    fun setMaxPC(location: Number)
+    fun incMaxPC(amount: Number)
     fun getReg(i: Int): Number
     fun setReg(i: Int, v: Number)
     fun getFReg(i: Int): Decimal

@@ -1,17 +1,13 @@
 package venusbackend.riscv
 
-import venusbackend.and
-import venusbackend.or
-import venusbackend.ushr
-
 /**
  * Represents the machine code of an instruction.
  *
- * For now this only supports RV32.
+ * For now this only supports 32bit and smaller instructions. Eventually it will be more general.
  *
  * @param encoding the underlying machine code of the instruction
  */
-class MachineCode(private var encoding: Number) {
+class MachineCode(private var encoding: Int) {
     var length = 4
 
     /**
@@ -20,7 +16,7 @@ class MachineCode(private var encoding: Number) {
      * @param ifield the instruction field to get
      * @return the value of the given instruction field
      */
-    operator fun get(ifield: InstructionField): Number {
+    operator fun get(ifield: InstructionField): Int {
         val mask = ((1L shl ifield.hi) - (1L shl ifield.lo)).toInt()
         return (encoding and mask) ushr ifield.lo
     }

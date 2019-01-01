@@ -1,6 +1,5 @@
 package venusbackend.numbers
 
-import kotlin.experimental.and
 import kotlin.math.sign
 
 // Fixme Need to actually implement this. I just copied it from Quadword.
@@ -335,10 +334,10 @@ class DoubleQuadWord(
     public infix fun shr(bitCount: Int): DoubleQuadWord {
         val qw = this.copy()
         if (bitCount >= 64) {
-            return if (this.int3.sign == 1) {
-                DoubleQuadWord(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE)
+            return if (this.int3.sign == -1) {
+                DoubleQuadWord(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
             } else {
-                DoubleQuadWord(0, 0, 0, 0)
+                DoubleQuadWord()
             }
         }
         if (bitCount and 0b1 == 1) {
@@ -535,7 +534,7 @@ fun Number.toDoubleQuadWord(): DoubleQuadWord {
 
 fun Byte.toDoubleQuadWord(): DoubleQuadWord {
     val num = this.toInt()
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         DoubleQuadWord(int0 = num, int1 = Int.MIN_VALUE, int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         DoubleQuadWord(int0 = num)
@@ -544,7 +543,7 @@ fun Byte.toDoubleQuadWord(): DoubleQuadWord {
 
 fun Short.toDoubleQuadWord(): DoubleQuadWord {
     val num = this.toInt()
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         DoubleQuadWord(int0 = num, int1 = Int.MIN_VALUE, int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         DoubleQuadWord(int0 = num)
@@ -553,7 +552,7 @@ fun Short.toDoubleQuadWord(): DoubleQuadWord {
 
 fun Int.toDoubleQuadWord(): DoubleQuadWord {
     val num = this
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         DoubleQuadWord(int0 = num, int1 = Int.MIN_VALUE, int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         DoubleQuadWord(int0 = num)
@@ -562,7 +561,7 @@ fun Int.toDoubleQuadWord(): DoubleQuadWord {
 
 fun Long.toDoubleQuadWord(): DoubleQuadWord {
     val num = this
-    return if (num.sign == 1) {
+    return if (num.sign == -1) {
         DoubleQuadWord(int0 = num.toInt(), int1 = (num shr 32).toInt(), int2 = Int.MIN_VALUE, int3 = Int.MIN_VALUE)
     } else {
         DoubleQuadWord(int0 = num.toInt(), int1 = (num shr 32).toInt())

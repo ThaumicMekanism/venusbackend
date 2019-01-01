@@ -23,8 +23,6 @@ class Simulator(
     val simulatorID: Int = 0
 ) {
 
-    // TODO make pc not rely on being an INT
-    private var maxpc = MemorySegments.TEXT_BEGIN.toLong()
     private var cycles = 0
     private val history = History()
     private val preInstruction = ArrayList<Diff>()
@@ -41,14 +39,14 @@ class Simulator(
         (state).getReg(1)
         var i = 0
         for (inst in linkedProgram.prog.insts) {
-            instOrderMapping[i] = maxpc
-            invInstOrderMapping[maxpc] = i
+            instOrderMapping[i] = state.getMaxPC()
+            invInstOrderMapping[state.getMaxPC()] = i
             i++
             var mcode = inst[InstructionField.ENTIRE]
             for (j in 0 until inst.length) {
-                state.mem.storeByte(maxpc, mcode and 0xFF)
+                state.mem.storeByte(state.getMaxPC(), mcode and 0xFF)
                 mcode = mcode shr 8
-                maxpc++
+                state.incMaxPC(1)
             }
         }
 
@@ -64,21 +62,27 @@ class Simulator(
             state.setReg(3, MemorySegments.STATIC_BEGIN)
         }
 
-        breakpoints = Array<Boolean>(linkedProgram.prog.insts.size, { false })
+        breakpoints = Array(linkedProgram.prog.insts.size, { false })
     }
 
-    fun isDone(): Boolean = getPC() >= if (settings.ecallOnlyExit) MemorySegments.STATIC_BEGIN else maxpc
+    fun isDone(): Boolean {
+        return getPC() >= if (settings.ecallOnlyExit) {
+            MemorySegments.STATIC_BEGIN
+        } else {
+            state.getMaxPC()
+        }
+    }
 
     fun getCycles(): Int {
         return cycles
     }
 
     fun getMaxPC(): Number {
-        return this.maxpc
+        return state.getMaxPC()
     }
 
     fun incMaxPC(amount: Number) {
-        this.maxpc += amount.toLong()
+        state.incMaxPC(amount)
     }
 
     fun getInstAt(addr: Number): MachineCode {
@@ -343,7 +347,8 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
         }
-        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.BYTE.size)..this.maxpc) {
+        // FIXME change the cast to maxpc to something more generic or make the iterator be generic.
+        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.BYTE.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
         preInstruction.add(CacheDiff(Address(addr, MemSize.BYTE)))
@@ -362,7 +367,7 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.HALF.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not HALF WORD aligned!")
         }
-        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.HALF.size)..this.maxpc) {
+        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.HALF.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
         preInstruction.add(CacheDiff(Address(addr, MemSize.HALF)))
@@ -381,7 +386,7 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.WORD.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not WORD aligned!")
         }
-        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..this.maxpc) {
+        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
         preInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
@@ -400,7 +405,7 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.LONG.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not long aligned!")
         }
-        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..this.maxpc) {
+        if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
         preInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
@@ -411,13 +416,13 @@ class Simulator(
 
     fun storeTextOverrideCheck(addr: Number, value: Number, size: MemSize) {
         /*Here, we will check if we are writing to memory*/
-        if (addr in (MemorySegments.TEXT_BEGIN until this.maxpc) || (addr + size.size - MemSize.BYTE.size) in (MemorySegments.TEXT_BEGIN until this.maxpc)) {
+        if (addr in (MemorySegments.TEXT_BEGIN until state.getMaxPC().toInt()) || (addr + size.size - MemSize.BYTE.size) in (MemorySegments.TEXT_BEGIN until state.getMaxPC().toInt())) {
             try {
                 val adjAddr = ((addr / MemSize.WORD.size) * MemSize.WORD.size)
                 val lowerAddr = adjAddr - MemorySegments.TEXT_BEGIN
                 var newInst = this.state.mem.loadWord(adjAddr)
                 preInstruction.add(Renderer.updateProgramListing(lowerAddr / MemSize.WORD.size, newInst))
-                if ((lowerAddr + MemorySegments.TEXT_BEGIN) != addr && (lowerAddr + MemSize.WORD.size - MemSize.BYTE.size) < this.maxpc) {
+                if ((lowerAddr + MemorySegments.TEXT_BEGIN) != addr && (lowerAddr + MemSize.WORD.size - MemSize.BYTE.size) < state.getMaxPC()) {
                     newInst = this.state.mem.loadWord(adjAddr + MemSize.WORD.size)
                     preInstruction.add(Renderer.updateProgramListing((lowerAddr / MemSize.WORD.size) + 1, newInst))
                 }
@@ -454,7 +459,7 @@ class Simulator(
             val short = loadHalfWord(getPC() + 2).toULong()
             instruction = (short shl 16 * i) or instruction
         }
-        val mcode = MachineCode(instruction.toLong())
+        val mcode = MachineCode(instruction.toInt())
         mcode.length = length
         return mcode
     }
