@@ -13,26 +13,26 @@ val divu = RTypeInstruction(
         eval16 = { a, b ->
             val x = a.toInt() shl 16 ushr 16
             val y = b.toInt() shl 16 ushr 16
-            if (y == (0L).toInt()) a
+            if (y == (0L).toInt()) Short.MAX_VALUE
             else (x / y).toShort()
         },
         eval32 = { a, b ->
             val x = a.toLong() shl 32 ushr 32
             val y = b.toLong() shl 32 ushr 32
-            if (y == 0L) a
+            if (y == 0L) Int.MAX_VALUE
             else (x / y).toInt()
         },
         eval64 = { a, b ->
             val x = a.toQuadWord() shl 64 ushr 64
             val y = b.toQuadWord() shl 64 ushr 64
-            if (y == QuadWord()) a
+            if (y == QuadWord()) Long.MAX_VALUE
             else (x / y).toLong()
         },
         /*FIXME 128 need to be able to convert to larger things that LONG*/
         eval128 = { a, b ->
             val x = a.toDoubleQuadWord() shl 128 ushr 128
             val y = b.toDoubleQuadWord() shl 128 ushr 128
-            if (y == 0.toDoubleQuadWord()) a
+            if (y == 0.toDoubleQuadWord()) QuadWord.MAX_VALUE
             else (x / y).toQuadWord()
         }
 )
