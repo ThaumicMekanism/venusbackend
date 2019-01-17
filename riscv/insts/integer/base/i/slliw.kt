@@ -10,10 +10,10 @@ val slliw = ShiftWImmediateInstruction(
         funct3 = 0b001,
         funct7 = 0b0000000,
         eval16 = { a, b ->
-            throw InstructionNotSupportedError("addiw is not supported on 16 bit systems!")
+            throw InstructionNotSupportedError("slliw is not supported on 16 bit systems!")
         },
         eval32 = { a, b ->
-            throw InstructionNotSupportedError("addiw is not supported on 32 bit systems!")
+            throw InstructionNotSupportedError("slliw is not supported on 32 bit systems!")
         },
         eval64 = { a, b ->
             if (b == 0L) a.toInt().toLong() else (a.toInt() shl b.toInt()).toLong()

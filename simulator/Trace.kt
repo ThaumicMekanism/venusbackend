@@ -59,7 +59,7 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Nu
 * Takes in a base 10 integer and a base to convert it to and returns a string of what the number is.
 */
 fun numToBase(curNumBase: Int, nu: Number, lengthNeeded: Int, signextend: Boolean): String {
-    val n = nu.toInt() // FIXME
+    val n = nu as Int // FIXME
     val amount = ((2).toDouble()).pow(lengthNeeded.toDouble())
     val length = getBaseLog(curNumBase.toDouble(), amount).roundToInt()
     var num = if (signextend) {

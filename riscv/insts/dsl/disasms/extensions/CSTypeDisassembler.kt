@@ -10,7 +10,6 @@ object CSTypeDisassembler : InstructionDisassembler {
         val name = Instruction[mcode].name
         val rd = mcode[InstructionField.RDP]
         val rs1 = mcode[InstructionField.RS1P]
-        val rs2 = mcode[InstructionField.RS2P]
-        return "$name x$rd x$rs1 x$rs2"
+        return "$name x$rd x$rs1"
     }
 }

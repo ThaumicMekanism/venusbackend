@@ -506,7 +506,8 @@ class DoubleQuadWord(
     }
 
     override fun toString(): String {
-        return String.format("0x%016x%016x", high(), low())
+        throw NotImplementedError()
+//        return String.format("0x%016x%016x", high(), low())
     }
 }
 
@@ -529,7 +530,7 @@ fun Number.toDoubleQuadWord(): DoubleQuadWord {
     if (this is Short) {
         return this.toShort().toDoubleQuadWord()
     }
-    throw TypeCastException("Unknown number type!")
+    throw ClassCastException("Unknown number type!")
 }
 
 fun Byte.toDoubleQuadWord(): DoubleQuadWord {

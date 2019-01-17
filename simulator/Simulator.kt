@@ -32,15 +32,15 @@ class Simulator(
     var ebreak = false
     var stdout = ""
     var filesHandler = FilesHandler(this)
-    val instOrderMapping = HashMap<Int, Number>()
-    val invInstOrderMapping = HashMap<Number, Int>()
+    val instOrderMapping = HashMap<Int, Int>()
+    val invInstOrderMapping = HashMap<Int, Int>()
 
     init {
         (state).getReg(1)
         var i = 0
         for (inst in linkedProgram.prog.insts) {
-            instOrderMapping[i] = state.getMaxPC()
-            invInstOrderMapping[state.getMaxPC()] = i
+            instOrderMapping[i] = state.getMaxPC().toInt()
+            invInstOrderMapping[state.getMaxPC().toInt()] = i
             i++
             var mcode = inst[InstructionField.ENTIRE]
             for (j in 0 until inst.length) {
@@ -275,7 +275,7 @@ class Simulator(
     /* TODO Make this more efficient while robust! */
     fun atBreakpoint(): Boolean {
         val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
-        val inst = invInstOrderMapping[location]!!
+        val inst = invInstOrderMapping[location.toInt()]!!
         return ebreak || breakpoints[inst]
     }
 

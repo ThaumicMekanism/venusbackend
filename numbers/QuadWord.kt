@@ -5,21 +5,21 @@ import kotlin.math.sign
 class QuadWord(var int0: Int = 0, var int1: Int = 0, var int2: Int = 0, var int3: Int = 0) : Number(), Comparable<QuadWord> {
     companion object {
         /**
-         * The number of bytes used to represent an instance of Int in a binary form.
+         * The number of bytes used to represent an instance of QuadWord in a binary form.
          */
         public const val SIZE_BYTES: Int = 16
 
         /**
-         * The number of bits used to represent an instance of Int in a binary form.
+         * The number of bits used to represent an instance of QuadWord in a binary form.
          */
         public const val SIZE_BITS: Int = 128
         /**
-         * A constant holding the minimum value an instance of Int can have.
+         * A constant holding the minimum value an instance of QuadWord can have.
          */
         public val MIN_VALUE: QuadWord = QuadWord(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
 
         /**
-         * A constant holding the maximum value an instance of Int can have.
+         * A constant holding the maximum value an instance of QuadWord can have.
          */
         public val MAX_VALUE: QuadWord = QuadWord(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE)
     }
@@ -496,7 +496,8 @@ class QuadWord(var int0: Int = 0, var int1: Int = 0, var int2: Int = 0, var int3
     }
 
     override fun toString(): String {
-        return String.format("0x%016x%016x", high(), low())
+        throw NotImplementedError()
+//        return String.format("0x%016x%016x", high(), low())
     }
 }
 
@@ -516,7 +517,7 @@ fun Number.toQuadWord(): QuadWord {
     if (this is Short) {
         return this.toShort().toQuadWord()
     }
-    throw TypeCastException("Unknown number type!")
+    throw ClassCastException("Unknown number type!")
 }
 
 fun Byte.toQuadWord(): QuadWord {
