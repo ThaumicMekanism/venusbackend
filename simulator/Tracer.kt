@@ -9,7 +9,7 @@ import venusbackend.riscv.MemorySegments
 /**
  * Created by Thaumic on 7/14/2018.
  */
-class Tracer(val sim: Simulator) {
+class Tracer(var sim: Simulator) {
     var version = "v2.0.1"
     var format = "%output%%0%\t%1%\t%2%\t%3%\t%4%\t%5%\t%6%\t%7%\t%8%\t%9%\t%10%\t%11%\t%12%\t%13%\t%14%\t%15%\t%16%\t%17%\t%18%\t%19%\t%20%\t%21%\t%22%\t%23%\t%24%\t%25%\t%26%\t%27%\t%28%\t%29%\t%30%\t%31%\t%line%\t%pc%\t%inst%\n"
     var amtReg = 32
