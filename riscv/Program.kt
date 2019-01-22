@@ -1,5 +1,6 @@
 package venusbackend.riscv
 
+import venusbackend.assembler.AssemblerError
 import venusbackend.assembler.DebugInfo
 import venusbackend.linker.DataRelocationInfo
 import venusbackend.linker.RelocationInfo
@@ -110,7 +111,7 @@ class Program(var name: String = "anonymous") {
         // TODO FIX ME TO WORK WITH FORWARD AND BACKWARD LOCAL REFERENCE
         val loc = if (label.matches(Regex("\\d+[fb]"))) {
             val intlabel = label.substring(0, label.length - 1).toInt()
-            val number_set = localReferences[intlabel]!!
+            val number_set = localReferences[intlabel] ?: throw AssemblerError("The number label '$intlabel' has not been defined!")
             if (label.matches(Regex("\\d+f"))) {
                 number_set.filter { it >= address }.min()
             } else {
