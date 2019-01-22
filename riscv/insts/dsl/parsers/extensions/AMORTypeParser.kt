@@ -1,5 +1,6 @@
 package venusbackend.riscv.insts.dsl.parsers.extensions
 
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.Program
@@ -8,7 +9,7 @@ import venusbackend.riscv.insts.dsl.parsers.checkArgsLength
 import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
 
 object AMORTypeParser : InstructionParser {
-    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>) {
+    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
         checkArgsLength(args.size, 3)
 
         mcode[InstructionField.RD] = regNameToNumber(args[0])

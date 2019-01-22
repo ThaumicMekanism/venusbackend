@@ -2,6 +2,7 @@ package venusbackend.riscv.insts.dsl.parsers.base
 
 /* ktlint-disable no-wildcard-imports */
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.*
 import venusbackend.riscv.insts.dsl.getImmWarning
 import venusbackend.riscv.insts.dsl.parsers.InstructionParser
@@ -12,7 +13,7 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
 object BTypeParser : InstructionParser {
     const val B_TYPE_MIN = -2048
     const val B_TYPE_MAX = 2047
-    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>) {
+    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
         checkArgsLength(args.size, 3)
 
         mcode[InstructionField.RS1] = regNameToNumber(args[0])
@@ -21,11 +22,11 @@ object BTypeParser : InstructionParser {
         val label = args[2]
         var imm: Int? = null
         try {
-            imm = prog.getLabelOffset(label)
+            imm = prog.getLabelOffset(label, prog.textSize)
                     ?: throw AssemblerError("could not find label $label")
         } catch (e: AssemblerError) {
             try {
-                imm = prog.getLabelOffset(venusInternalLabels + (userStringToInt(label) + prog.textSize))
+                imm = prog.getLabelOffset(venusInternalLabels + (userStringToInt(label) + prog.textSize), prog.textSize)
                 getImmWarning += "Interpreting the label as an offset!; "
             } catch (e2: Throwable) {
                 throw e

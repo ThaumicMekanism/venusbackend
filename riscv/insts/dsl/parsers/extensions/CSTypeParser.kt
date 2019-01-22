@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.dsl.parsers.extensions
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.Program
@@ -12,7 +13,7 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
  * Created by thaum on 8/6/2018.
  */
 object CSTypeParser : InstructionParser {
-    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>) {
+    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
         checkArgsLength(args.size, 2)
 
         val rdp = regNameToNumber(args[0])

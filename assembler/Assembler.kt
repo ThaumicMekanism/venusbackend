@@ -60,7 +60,7 @@ object Assembler {
     }
 }
 
-data class DebugInfo(val lineNo: Int, val line: String)
+data class DebugInfo(val lineNo: Int, val line: String, val address: Int)
 data class DebugInstruction(val debug: DebugInfo, val LineTokens: List<String>)
 data class PassOneOutput(
     val prog: Program,
@@ -123,7 +123,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     allow_custom_memory_setments = false
                     val expandedInsts = replacePseudoInstructions(args)
                     for (inst in expandedInsts) {
-                        val dbg = DebugInfo(currentLineNumber, line)
+                        val dbg = DebugInfo(currentLineNumber, line, currentTextOffset)
                         val instsize = try {
                             Instruction[getInstruction(inst)].format.length
                         } catch (e: AssemblerError) {
@@ -394,7 +394,7 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
     fun run(): AssemblerOutput {
         for ((dbg, inst) in talInstructions) {
             try {
-                addInstruction(inst)
+                addInstruction(inst, dbg)
                 prog.addDebugInfo(dbg)
                 if (getImmWarning != "") {
                     val (lineNumber, _) = dbg
@@ -432,12 +432,12 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
      *
      * @param tokens a list of strings corresponding to the space delimited line
      */
-    private fun addInstruction(tokens: LineTokens) {
+    private fun addInstruction(tokens: LineTokens, dbg: DebugInfo) {
         if (tokens.isEmpty() || tokens[0].isEmpty()) return
         val cmd = getInstruction(tokens)
         val inst = Instruction[cmd]
         val mcode = inst.format.fill()
-        inst.parser(prog, mcode, tokens.drop(1))
+        inst.parser(prog, mcode, tokens.drop(1), dbg)
         prog.add(mcode)
     }
 }

@@ -21,11 +21,11 @@ import venusbackend.riscv.venusInternalLabels
 val jal = Instruction(
         name = "jal",
         format = OpcodeFormat(0b1101111),
-        parser = RawParser { prog, mcode, args ->
+        parser = RawParser { prog, mcode, args, dbg ->
             checkArgsLength(args.size, 2)
 
             mcode[InstructionField.RD] = regNameToNumber(args[0])
-            val label = if (prog.labels.containsKey(args[1])) {
+            val label = if (prog.labels.containsKey(args[1]) || args[1].matches(Regex("\\d+[fb]"))) {
                 args[1]
             } else {
                 try {
@@ -36,7 +36,12 @@ val jal = Instruction(
                     args[1]
                 }
             }
-            prog.addRelocation(JALRelocator, label)
+            if (label.matches(Regex("\\d+[fb]"))) {
+                val location: Int = prog.getLabelOffset(label, prog.textSize)!! + prog.textSize // I have to add the textsize since I remove it in the get label offset!
+                JALRelocator.invoke(mcode, prog.textSize, location)
+            } else {
+                prog.addRelocation(JALRelocator, label)
+            }
         },
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->

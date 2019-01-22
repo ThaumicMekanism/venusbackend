@@ -19,13 +19,13 @@ val jalr = Instruction(
                 opcode = 0b1100111,
                 funct3 = 0b000
         ),
-        parser = RawParser { prog, mcode, args ->
+        parser = RawParser { prog, mcode, args, dbg ->
             try {
-                ITypeParser(prog, mcode, args)
+                ITypeParser(prog, mcode, args, dbg)
             } catch (e: AssemblerError) {
                 /* Try base displacement notation */
                 try {
-                    LoadParser(prog, mcode, args)
+                    LoadParser(prog, mcode, args, dbg)
                 } catch (e_two: AssemblerError) {
                     throw e
                 }

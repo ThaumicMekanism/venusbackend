@@ -14,7 +14,7 @@ import venusbackend.riscv.insts.dsl.types.Instruction
 val clwsp = Instruction(
         name = "c.lwsp",
         format = OpcodeCFunct3Format(0b10, 0b010),
-        parser = RawParser { prog, mcode, args ->
+        parser = RawParser { prog, mcode, args, dbg ->
             checkArgsLength(args.size, 2)
 
             mcode[InstructionField.RD] = regNameToNumber(args[0])

@@ -4,6 +4,7 @@ import venusbackend.assembler.DebugInfo
 import venusbackend.linker.DataRelocationInfo
 import venusbackend.linker.RelocationInfo
 import venusbackend.riscv.insts.dsl.relocators.Relocator
+
 /**
  * An (unlinked) program.
  *
@@ -20,6 +21,7 @@ class Program(var name: String = "anonymous") {
     val relocationTable = ArrayList<RelocationInfo>()
     val dataRelocationTable = ArrayList<DataRelocationInfo>()
     val dataSegment = ArrayList<Byte>()
+    val localReferences = HashMap<Int, MutableSet<Int>>() // <Numeric Label, Addresses of that label>
     var textSize = 0
     var dataSize = 0
     private val globalLabels = HashSet<String>()
@@ -79,7 +81,22 @@ class Program(var name: String = "anonymous") {
      * @param label the label to add
      * @param offset the byte offset to add it at (from the start of the program)
      */
-    fun addLabel(label: String, offset: Int) = labels.put(label, offset)
+    fun addLabel(label: String, offset: Int): Int? {
+        if (label.matches(Regex("\\d+"))) {
+            val intlabel = label.toInt()
+            if (localReferences.containsKey(intlabel)) {
+                val set = localReferences[intlabel]!!
+                set.add(offset)
+            } else {
+                val new_set = HashSet<Int>()
+                new_set.add(offset)
+                localReferences[intlabel] = new_set
+            }
+            return null
+        } else {
+            return labels.put(label, offset)
+        }
+    }
 
     /**
      * Gets the _relative_ label offset, or null if it does not exist.
@@ -89,8 +106,19 @@ class Program(var name: String = "anonymous") {
      * @param label the label to find
      * @returns the relative offset, or null if it does not exist.
      */
-    fun getLabelOffset(label: String): Int? {
-        val loc = labels.get(label)
+    fun getLabelOffset(label: String, address: Int): Int? {
+        // TODO FIX ME TO WORK WITH FORWARD AND BACKWARD LOCAL REFERENCE
+        val loc = if (label.matches(Regex("\\d+[fb]"))) {
+            val intlabel = label.substring(0, label.length - 1).toInt()
+            val number_set = localReferences[intlabel]!!
+            if (label.matches(Regex("\\d+f"))) {
+                number_set.filter { it >= address }.min()
+            } else {
+                number_set.filter { it <= address }.max()
+            }
+        } else {
+            labels.get(label)
+        }
         return loc?.minus(textSize)
     }
 

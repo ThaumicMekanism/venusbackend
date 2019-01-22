@@ -1,5 +1,6 @@
 package venusbackend.riscv.insts.dsl.parsers.base
 
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.Program
@@ -11,7 +12,7 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
 object STypeParser : InstructionParser {
     const val S_TYPE_MIN = -2048
     const val S_TYPE_MAX = 2047
-    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>) {
+    override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
         checkArgsLength(args.size, 3)
 
         val imm = getImmediate(args[1], S_TYPE_MIN, S_TYPE_MAX)
