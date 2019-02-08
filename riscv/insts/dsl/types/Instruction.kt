@@ -25,7 +25,7 @@ open class Instruction(
         operator fun get(mcode: MachineCode): Instruction =
                 allInstructions.filter { it.format.length == mcode.length }
                         .firstOrNull { it.format.matches(mcode) }
-                        ?: throw SimulatorError("instruction not found for 0x" + mcode.toString(16))
+                        ?: throw SimulatorError("instruction not found for 0x" + mcode.toString(16), InstructionNotFoundError())
 
         operator fun get(name: String) =
                 allInstructions.firstOrNull { it.name == name }

@@ -112,12 +112,22 @@ class Simulator(
         preInstruction.clear()
         postInstruction.clear()
         val mcode: MachineCode = getNextInstruction()
-        when (state.registerWidth) {
-            16 -> { Instruction[mcode].impl16(mcode, this) }
-            32 -> { Instruction[mcode].impl32(mcode, this) }
-            64 -> { Instruction[mcode].impl64(mcode, this) }
-            128 -> { Instruction[mcode].impl128(mcode, this) }
-            else -> { throw SimulatorError("Unsupported register width!") }
+        try {
+            when (state.registerWidth) {
+                16 -> { Instruction[mcode].impl16(mcode, this) }
+                32 -> { Instruction[mcode].impl32(mcode, this) }
+                64 -> { Instruction[mcode].impl64(mcode, this) }
+                128 -> { Instruction[mcode].impl128(mcode, this) }
+                else -> { throw SimulatorError("Unsupported register width!") }
+            }
+        } catch (e: SimulatorError) {
+            if (e.infe == null) {
+                throw e
+            }
+            Renderer.displayError("\n[ERROR]: Could not decode the instruction (0x" + mcode.toString(16) + ") at pc='" + getPC() + "'!\n" +
+                    "Please make sure that you are not jumping to the middle of an instruction!\n" +
+                    "Here is a dump of the rest of the information:\n")
+            throw e
         }
         history.add(preInstruction)
         this.stdout += this.ecallMsg
@@ -275,7 +285,11 @@ class Simulator(
     /* TODO Make this more efficient while robust! */
     fun atBreakpoint(): Boolean {
         val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
-        val inst = invInstOrderMapping[location.toInt()]!!
+        val inst = invInstOrderMapping[location.toInt()]
+        if (inst == null) {
+            Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
+            return ebreak
+        }
         return ebreak || breakpoints[inst]
     }
 
@@ -453,13 +467,15 @@ class Simulator(
     }
 
     fun getNextInstruction(): MachineCode {
-        var instruction: ULong = loadHalfWord(getPC()).toULong()
+        val pc = getPC()
+        var instruction: ULong = loadHalfWord(pc).toULong()
         val length = getInstructionLength(instruction.toInt())
         for (i in 1 until length / 2) {
-            val short = loadHalfWord(getPC() + 2).toULong()
+            val short = loadHalfWord(pc + 2).toULong()
             instruction = (short shl 16 * i) or instruction
         }
-        val mcode = MachineCode(instruction.toInt())
+        val intStruction = instruction.toInt()
+        val mcode = MachineCode(intStruction)
         mcode.length = length
         return mcode
     }
