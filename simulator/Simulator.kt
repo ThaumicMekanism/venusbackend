@@ -34,6 +34,7 @@ class Simulator(
     var filesHandler = FilesHandler(this)
     val instOrderMapping = HashMap<Int, Int>()
     val invInstOrderMapping = HashMap<Int, Int>()
+    var exitcode: Int? = null
 
     init {
         (state).getReg(1)
@@ -58,8 +59,16 @@ class Simulator(
 
         setPC(linkedProgram.startPC ?: MemorySegments.TEXT_BEGIN)
         if (settings.setRegesOnInit) {
-            state.setReg(2, MemorySegments.STACK_BEGIN)
-            state.setReg(3, MemorySegments.STATIC_BEGIN)
+            state.setReg(Registers.sp, MemorySegments.STACK_BEGIN)
+//            state.setReg(Registers.fp, MemorySegments.STACK_BEGIN)
+            state.setReg(Registers.gp, MemorySegments.STATIC_BEGIN)
+            if (linkedProgram.prog.isGlobalLabel("main")) {
+                state.setReg(Registers.ra, state.getMaxPC())
+                settings.ecallOnlyExit = false // This is because this will not work with ecall exit only with this current hotfix
+                try {
+                    Renderer.updateRegister(Registers.ra, state.getMaxPC())
+                } catch (e: Exception) {}
+            }
         }
 
         breakpoints = Array(linkedProgram.prog.insts.size, { false })
@@ -131,6 +140,9 @@ class Simulator(
         }
         history.add(preInstruction)
         this.stdout += this.ecallMsg
+        if (isDone()) {
+            exitcode = state.getReg(Registers.a0).toInt()
+        }
         return postInstruction.toList()
     }
 
@@ -244,6 +256,7 @@ class Simulator(
         this.ecallMsg = ""
         this.stdout = ""
         cycles = 0
+        exitcode = null
         removeAllArgs()
     }
 

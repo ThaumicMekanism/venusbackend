@@ -318,7 +318,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 }
             }
 
-            ".globl" -> {
+            ".globl", "global" -> {
                 args.forEach(prog::makeLabelGlobal)
             }
 
