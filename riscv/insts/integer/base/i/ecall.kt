@@ -226,8 +226,7 @@ private fun sbrk(sim: Simulator) {
 
 private fun exit(sim: Simulator) {
     sim.setPC(MemorySegments.STATIC_BEGIN)
-    val retVal = sim.getReg(11)
-    sim.exitcode = retVal.toInt()
+    sim.exitcode = 0
     // sim.ecallMsg = "exiting the simulator"
 }
 
