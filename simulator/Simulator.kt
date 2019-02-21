@@ -147,6 +147,7 @@ class Simulator(
     }
 
     fun undo(): List<Diff> {
+        exitcode = null
         if (!canUndo()) return emptyList() /* TODO: error here? */
         val diffs = history.pop()
         for (diff in diffs) {
