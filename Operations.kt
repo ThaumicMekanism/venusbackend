@@ -2,7 +2,6 @@ package venusbackend
 
 import venusbackend.numbers.QuadWord
 import venusbackend.numbers.toQuadWord
-import kotlin.experimental.inv
 
 operator fun Number.plus(other: Number): Number {
     return if ((this is QuadWord) or (other is QuadWord)) {
@@ -64,13 +63,13 @@ operator fun Number.inc(): Number {
     return if ((this is QuadWord)) {
         (this.toQuadWord()).inc()
     } else if ((this is Long)) {
-        ((this.toLong()).inv())
+        ((this.toLong()).inc())
     } else if ((this is Int)) {
-        ((this.toInt()).inv())
+        ((this.toInt()).inc())
     } else if ((this is Short)) {
-        ((this.toShort()).inv()) as Number
+        ((this.toShort()).inc()) as Number
     } else {
-        ((this.toQuadWord()).inv())
+        ((this.toQuadWord()).inc())
     }
 }
 

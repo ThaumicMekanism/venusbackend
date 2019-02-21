@@ -140,7 +140,7 @@ class Simulator(
         }
         history.add(preInstruction)
         this.stdout += this.ecallMsg
-        if (isDone()) {
+        if (isDone() && exitcode == null) {
             exitcode = state.getReg(Registers.a0).toInt()
         }
         return postInstruction.toList()
