@@ -140,6 +140,9 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                         currentTextOffset += instsize
                     }
                 }
+                for (p1warning in p1warnings) {
+                    p1warning.line = currentLineNumber
+                }
                 warnings.addAll(p1warnings)
                 p1warnings.clear()
             } catch (e: AssemblerError) {
