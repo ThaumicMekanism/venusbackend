@@ -15,7 +15,7 @@ object Load : PseudoWriter() {
         checkArgsLength(args, 3)
 
         try {
-            regNameToNumber(args[1])
+            regNameToNumber(args[2])
             p1warnings.add(AssemblerWarning("You are using the load pseudoinstruction which takes in rd, symbol and the symbol matches a register name."))
         } catch (e: AssemblerError) {}
 
