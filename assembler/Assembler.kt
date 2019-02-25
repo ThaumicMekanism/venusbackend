@@ -25,7 +25,7 @@ object Assembler {
      */
     fun assemble(text: String, name: String = "anonymous"): AssemblerOutput {
         InitInstructions() // This is due to how some method of compilation handle all of the code.
-        var (passOneProg, talInstructions, passOneErrors) = AssemblerPassOne(text.replace("\r", ""), name).run()
+        var (passOneProg, talInstructions, passOneErrors, warnings) = AssemblerPassOne(text.replace("\r", ""), name).run()
 
         /* This will force pc to be word aligned. Removed it because I guess you could custom it.
         if (passOneProg.insts.size > 0) {
@@ -56,6 +56,11 @@ object Assembler {
                 throw SimulatorError("Could not change the text size so could not fit the program because the static is too low and the text would be below zero!")
             }
         }
+        if (warnings.isNotEmpty()) {
+            val arr = passTwoOutput.warnings.toMutableList()
+            arr.addAll(warnings)
+            passTwoOutput = AssemblerOutput(passTwoOutput.prog, passTwoOutput.errors, arr)
+        }
         return passTwoOutput
     }
 }
@@ -65,7 +70,8 @@ data class DebugInstruction(val debug: DebugInfo, val LineTokens: List<String>)
 data class PassOneOutput(
     val prog: Program,
     val talInstructions: List<DebugInstruction>,
-    val errors: List<AssemblerError>
+    val errors: List<AssemblerError>,
+    val warnings: List<AssemblerWarning>
 )
 data class AssemblerOutput(val prog: Program, val errors: List<AssemblerError>, val warnings: List<AssemblerWarning>)
 
@@ -75,6 +81,7 @@ data class AssemblerOutput(val prog: Program, val errors: List<AssemblerError>, 
  * It parses labels, expands pseudo-instructions and follows venusbackend.assembler directives.
  * It populations [talInstructions], which is then used by [AssemblerPassTwo] in order to actually assemble the code.
  */
+val p1warnings = ArrayList<AssemblerWarning>()
 internal class AssemblerPassOne(private val text: String, name: String = "anonymous") {
     /** The program we are currently assembling */
     private val prog = Program(name)
@@ -96,7 +103,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
 
     fun run(): PassOneOutput {
         doPassOne()
-        return PassOneOutput(prog, talInstructions, errors)
+        return PassOneOutput(prog, talInstructions, errors, warnings)
     }
 
     private fun doPassOne() {
@@ -133,6 +140,8 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                         currentTextOffset += instsize
                     }
                 }
+                warnings.addAll(p1warnings)
+                p1warnings.clear()
             } catch (e: AssemblerError) {
                 errors.add(AssemblerError(currentLineNumber, e))
             }
@@ -388,6 +397,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
  * @see addInstruction
  * @see venus.riscv.Program.addDebugInfo
  */
+
 internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<DebugInstruction>) {
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
