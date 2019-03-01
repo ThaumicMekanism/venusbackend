@@ -28,6 +28,7 @@ object Lexer {
         var inCharacter = false
         var inString = false
         var foundComment = false
+        var inParen = 0
 
         for (ch in line) {
             var wasDelimiter = false
@@ -44,7 +45,18 @@ object Lexer {
                         }
                     }
                 }
-                ' ', '\t', '(', ')', ',' -> wasDelimiter = !inString && !inCharacter
+                '(' -> {
+                    inParen++
+                    wasDelimiter = !inString && !inCharacter
+                }
+                ')' -> {
+                    if (inParen == 0) {
+                        throw AssemblerError("Cannot end a parentheses sequence which has not started yet.")
+                    }
+                    inParen--
+                    wasDelimiter = !inString && !inCharacter
+                }
+                ' ', '\t', ',' -> wasDelimiter = !inString && !inCharacter
             }
             escaped = !escaped && ch == '\\'
 
@@ -60,7 +72,9 @@ object Lexer {
                 currentWord.append(ch)
             }
         }
-
+        if (inParen > 0) {
+            throw AssemblerError("Mismatched number of parentheses!")
+        }
         addNonemptyWord(previousWords, currentWord)
 
         return Pair(labels, previousWords)
