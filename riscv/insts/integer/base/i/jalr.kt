@@ -20,16 +20,16 @@ val jalr = Instruction(
                 funct3 = 0b000
         ),
         parser = RawParser { prog, mcode, args, dbg ->
-            try {
+//            try {
                 ITypeParser(prog, mcode, args, dbg)
-            } catch (e: AssemblerError) {
-                /* Try base displacement notation */
-                try {
-                    LoadParser(prog, mcode, args, dbg)
-                } catch (e_two: AssemblerError) {
-                    throw e
-                }
-            }
+//            } catch (e: AssemblerError) {
+//                /* Try base displacement notation */
+//                try {
+//                    LoadParser(prog, mcode, args, dbg)
+//                } catch (e_two: AssemblerError) {
+//                    throw e
+//                }
+//            }
         },
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
