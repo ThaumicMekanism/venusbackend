@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.assembler.AssemblerError
+// import venusbackend.assembler.AssemblerError
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.insts.dsl.types.Instruction
@@ -10,7 +10,7 @@ import venusbackend.riscv.insts.dsl.impls.NoImplementation
 import venusbackend.riscv.insts.dsl.impls.RawImplementation
 import venusbackend.riscv.insts.dsl.impls.signExtend
 import venusbackend.riscv.insts.dsl.parsers.base.ITypeParser
-import venusbackend.riscv.insts.dsl.parsers.base.LoadParser
+// import venusbackend.riscv.insts.dsl.parsers.base.LoadParser
 import venusbackend.riscv.insts.dsl.parsers.RawParser
 
 val jalr = Instruction(
