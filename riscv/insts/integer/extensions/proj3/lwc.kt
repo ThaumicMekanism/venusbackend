@@ -71,6 +71,6 @@ val lwc = Instruction(
             val rs1 = mcode[InstructionField.RS1]
             val rs2 = mcode[InstructionField.RS2]
             val funct7 = mcode[InstructionField.FUNCT7]
-            "lwc x$rd x$rs1 $funct7(x$rs2)"
+            "lwc x$rd $funct7(x$rs1) x$rs2"
         }
 )
