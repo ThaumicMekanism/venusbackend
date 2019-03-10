@@ -18,6 +18,10 @@ import venusbackend.riscv.insts.integer.base.uj.*
 import venusbackend.riscv.insts.integer.extensions.atomic.r.*
 import venusbackend.riscv.insts.integer.extensions.compressed.cs.*
 import venusbackend.riscv.insts.integer.extensions.multiply.r.*
+import venusbackend.riscv.insts.integer.extensions.proj3.lwc
+import venusbackend.riscv.insts.integer.extensions.proj3.pop
+import venusbackend.riscv.insts.integer.extensions.proj3.push
+
 /* ktlint-enable no-wildcard-imports */
 
 class InitInstructions {
@@ -165,6 +169,9 @@ class InitInstructions {
             csub
             caddw
             csubw
+            lwc
+            push
+            pop
             inited = true
         }
     }
