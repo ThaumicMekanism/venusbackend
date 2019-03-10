@@ -1,6 +1,5 @@
 package venusbackend.riscv.insts.integer.extensions.proj3
 
-import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.Registers
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
@@ -17,38 +16,22 @@ val push = Instruction(
         format = OpcodeFunct3Format(0b0111011, 0b011),
         parser = RawParser { prog, mcode, args, dbg ->
             checkArgsLength(args.size, 1)
-            mcode[InstructionField.RS1] = regNameToNumber(args[0])
+            mcode[InstructionField.RS2] = regNameToNumber(args[0])
         },
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
-            val rs1 = mcode[InstructionField.RS1].toInt()
-            val vrs1 = sim.getReg(rs1).toInt()
+            val rs2 = mcode[InstructionField.RS2].toInt()
+            val vrs2 = sim.getReg(rs2).toInt()
             var vsp = sim.getReg(Registers.sp).toInt()
             vsp -= 4
             sim.setReg(Registers.sp, vsp)
-            sim.storeWordwCache(vsp, vrs1)
+            sim.storeWordwCache(vsp, vrs2)
             sim.incrementPC(mcode.length)
         },
-        impl64 = RawImplementation { mcode, sim ->
-            val rs1 = mcode[InstructionField.RS1].toInt()
-            val vrs1 = sim.getReg(rs1).toLong()
-            var vsp = sim.getReg(Registers.sp).toLong()
-            vsp -= 4
-            sim.setReg(Registers.sp, vsp)
-            sim.storeWordwCache(vsp, vrs1)
-            sim.incrementPC(mcode.length)
-        },
-        impl128 = RawImplementation { mcode, sim ->
-            val rs1 = mcode[InstructionField.RS1].toInt()
-            val vrs1 = sim.getReg(rs1).toQuadWord()
-            var vsp = sim.getReg(Registers.sp).toQuadWord()
-            vsp -= 4
-            sim.setReg(Registers.sp, vsp)
-            sim.storeWordwCache(vsp, vrs1)
-            sim.incrementPC(mcode.length)
-        },
+        impl64 = NoImplementation,
+        impl128 = NoImplementation,
         disasm = RawDisassembler { mcode ->
-            val rs1 = mcode[InstructionField.RS1]
-            "push x$rs1"
+            val rs2 = mcode[InstructionField.RS2]
+            "push x$rs2"
         }
 )

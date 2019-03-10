@@ -1,6 +1,5 @@
 package venusbackend.riscv.insts.integer.extensions.proj3
 
-import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
 import venusbackend.riscv.insts.dsl.formats.OpcodeFunct3Format
@@ -14,7 +13,7 @@ import venusbackend.riscv.insts.dsl.types.Instruction
 
 val lwc = Instruction(
         name = "lwc",
-        format = OpcodeFunct3Format(0b0111011, 0b010),
+        format = OpcodeFunct3Format(0b0000011, 0b111),
         parser = RawParser { prog, mcode, args, dbg ->
             checkArgsLength(args.size, 4)
 
@@ -38,34 +37,8 @@ val lwc = Instruction(
             }
             sim.incrementPC(mcode.length)
         },
-        impl64 = RawImplementation { mcode, sim ->
-            val rd = mcode[InstructionField.RD].toInt()
-            val rs1 = mcode[InstructionField.RS1].toInt()
-            val rs2 = mcode[InstructionField.RS2].toInt()
-            val funct7 = mcode[InstructionField.FUNCT7].toInt()
-            val vrs1 = sim.getReg(rs1).toLong()
-            val vrs2 = sim.getReg(rs2).toLong()
-            if (vrs2 != 0L) {
-                val addr = funct7 + vrs1
-                val m = sim.loadWordwCache(addr)
-                sim.setReg(rd, m.toLong())
-            }
-            sim.incrementPC(mcode.length)
-        },
-        impl128 = RawImplementation { mcode, sim ->
-            val rd = mcode[InstructionField.RD].toInt()
-            val rs1 = mcode[InstructionField.RS1].toInt()
-            val rs2 = mcode[InstructionField.RS2].toInt()
-            val funct7 = mcode[InstructionField.FUNCT7].toQuadWord()
-            val vrs1 = sim.getReg(rs1).toQuadWord()
-            val vrs2 = sim.getReg(rs2).toQuadWord()
-            if (vrs2 != 0.toQuadWord()) {
-                val addr = funct7 + vrs1
-                val m = sim.loadWordwCache(addr)
-                sim.setReg(rd, m.toQuadWord())
-            }
-            sim.incrementPC(mcode.length)
-        },
+        impl64 = NoImplementation,
+        impl128 = NoImplementation,
         disasm = RawDisassembler { mcode ->
             val rd = mcode[InstructionField.RD]
             val rs1 = mcode[InstructionField.RS1]
