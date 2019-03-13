@@ -167,6 +167,10 @@ class Tracer(var sim: Simulator) {
             }
         }
         t.line = this.tr.stringIndex
+        val peaked = this.tr.peak()
+        if (twoStage && this.instFirst && (peaked.jumped || peaked.branched) && t.pc > sim.getMaxPC()) {
+            t.pc = t.pc.toInt() + 4
+        }
         this.tr.str += t.getString(format, base)
         this.tr.stringIndex++
         if (twoStage && !this.instFirst) {
