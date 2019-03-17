@@ -15,6 +15,9 @@ class SimulatorState16 : SimulatorState {
     override val registerWidth = 16
     override var mem = Memory()
     override var cache = CacheHandler(1)
+    override fun setCache(ch: CacheHandler) {
+        cache = ch
+    }
     override fun setPC(location: Number) {
         this.pc = location.toShort()
     }
@@ -47,5 +50,9 @@ class SimulatorState16 : SimulatorState {
 
     override fun incHeapEnd(amount: Number) {
         heapEnd = (heapEnd + amount.toShort()).toShort()
+    }
+
+    override fun reset() {
+        this.cache.reset()
     }
 }

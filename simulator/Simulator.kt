@@ -259,6 +259,7 @@ class Simulator(
         cycles = 0
         exitcode = null
         removeAllArgs()
+        state.reset()
     }
 
     fun trace(): Tracer {
