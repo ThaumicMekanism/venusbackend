@@ -6,6 +6,7 @@ import venusbackend.riscv.insts.dsl.formats.OpcodeFunct3Format
 import venusbackend.riscv.insts.dsl.getImmediate
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
 import venusbackend.riscv.insts.dsl.impls.RawImplementation
+import venusbackend.riscv.insts.dsl.impls.signExtend
 import venusbackend.riscv.insts.dsl.parsers.RawParser
 import venusbackend.riscv.insts.dsl.parsers.checkArgsLength
 import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
@@ -27,7 +28,7 @@ val lwc = Instruction(
             val rd = mcode[InstructionField.RD].toInt()
             val rs1 = mcode[InstructionField.RS1].toInt()
             val rs2 = mcode[InstructionField.RS2].toInt()
-            val funct7 = mcode[InstructionField.FUNCT7].toInt()
+            val funct7 = signExtend(mcode[InstructionField.FUNCT7].toInt(), 7)
             val vrs1 = sim.getReg(rs1).toInt()
             val vrs2 = sim.getReg(rs2).toInt()
             if (vrs2 != 0) {
@@ -43,7 +44,7 @@ val lwc = Instruction(
             val rd = mcode[InstructionField.RD]
             val rs1 = mcode[InstructionField.RS1]
             val rs2 = mcode[InstructionField.RS2]
-            val funct7 = mcode[InstructionField.FUNCT7]
+            val funct7 = signExtend(mcode[InstructionField.FUNCT7].toInt(), 7)
             "lwc x$rd $funct7(x$rs1) x$rs2"
         }
 )

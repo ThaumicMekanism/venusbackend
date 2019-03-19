@@ -22,7 +22,7 @@ var venuspackage = {
           var rd = mcode.get_cv51c2$(InstructionField$RD_getInstance());
           var rs1 = mcode.get_cv51c2$(InstructionField$RS1_getInstance());
           var rs2 = mcode.get_cv51c2$(InstructionField$RS2_getInstance());
-          var funct7 = mcode.get_cv51c2$(InstructionField$FUNCT7_getInstance());
+          var funct7 = signExtend(mcode.get_cv51c2$(InstructionField$FUNCT7_getInstance()), 7);
           var vrs1 = numberToInt(sim.getReg_za3lpa$(rs1));
           var vrs2 = numberToInt(sim.getReg_za3lpa$(rs2));
           if (vrs2 !== 0) {
@@ -37,7 +37,7 @@ var venuspackage = {
           var rd = mcode.get_cv51c2$(InstructionField$RD_getInstance());
           var rs1 = mcode.get_cv51c2$(InstructionField$RS1_getInstance());
           var rs2 = mcode.get_cv51c2$(InstructionField$RS2_getInstance());
-          var funct7 = mcode.get_cv51c2$(InstructionField$FUNCT7_getInstance());
+          var funct7 = signExtend(mcode.get_cv51c2$(InstructionField$FUNCT7_getInstance()), 7);
           return 'lwc x' + rd + ' ' + funct7 + '(x' + rs1 + ') x' + rs2;
         }
         var lwc;
