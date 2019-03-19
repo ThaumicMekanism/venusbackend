@@ -15,7 +15,7 @@ class SimulatorState16 : SimulatorState {
     override val registerWidth = 16
     override var mem = Memory()
     override var cache = CacheHandler(1)
-    override fun setCache(ch: CacheHandler) {
+    override fun setCacheHandler(ch: CacheHandler) {
         cache = ch
     }
     override fun setPC(location: Number) {
