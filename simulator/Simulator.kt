@@ -323,7 +323,7 @@ class Simulator(
     }
 
     fun isValidAccess(addr: Number, bytes: Int) {
-        if (!this.settings.allow_access_btn_stack_heap) {
+        if (!this.settings.allowAccessBtnStackHeap) {
             val upperAddr = addr + bytes
             val sp = state.getReg(Registers.sp)
             val heap = state.getHeapEnd()
