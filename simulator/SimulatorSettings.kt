@@ -10,5 +10,6 @@ data class SimulatorSettings(
     var setRegesOnInit: Boolean = true,
     var maxSteps: Int = 500000,
     var ASLR: Boolean = false,
-    var NX_bit: Boolean = false
+    var NX_bit: Boolean = false,
+    var allow_access_btn_stack_heap: Boolean = true
 )

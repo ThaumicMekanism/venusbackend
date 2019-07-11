@@ -322,11 +322,26 @@ class Simulator(
         postInstruction.add(PCDiff(getPC()))
     }
 
+    fun isValidAccess(addr: Number, bytes: Int) {
+        if (!this.settings.allow_access_btn_stack_heap) {
+            val upperAddr = addr + bytes
+            val sp = state.getReg(Registers.sp)
+            val heap = state.getHeapEnd()
+            if ((addr > heap && addr < sp) ||
+                (upperAddr > heap && upperAddr < sp)) {
+                throw SimulatorError(
+                        "Attempting to access uninitialized memory between the stack and heap. Attempting to access '$bytes' bytes at address '$addr'.",
+                        handled = true)
+            }
+        }
+    }
+
     fun loadByte(addr: Number): Int = state.mem.loadByte(addr)
     fun loadBytewCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
         }
+        this.isValidAccess(addr, MemSize.BYTE.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.BYTE)))
         state.cache.read(Address(addr, MemSize.BYTE))
         postInstruction.add(CacheDiff(Address(addr, MemSize.BYTE)))
@@ -338,6 +353,7 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.HALF.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not HALF WORD aligned!")
         }
+        this.isValidAccess(addr, MemSize.HALF.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.HALF)))
         state.cache.read(Address(addr, MemSize.HALF))
         postInstruction.add(CacheDiff(Address(addr, MemSize.HALF)))
@@ -349,6 +365,7 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.WORD.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not WORD aligned!")
         }
+        this.isValidAccess(addr, MemSize.WORD.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
         state.cache.read(Address(addr, MemSize.WORD))
         postInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
@@ -360,6 +377,7 @@ class Simulator(
         if (this.settings.alignedAddress && addr % MemSize.LONG.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not LONG aligned!")
         }
+        this.isValidAccess(addr, MemSize.LONG.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
         state.cache.read(Address(addr, MemSize.LONG))
         postInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
@@ -380,6 +398,7 @@ class Simulator(
         if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.BYTE.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
+        this.isValidAccess(addr, MemSize.BYTE.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.BYTE)))
         state.cache.write(Address(addr, MemSize.BYTE))
         this.storeByte(addr, value)
@@ -399,6 +418,7 @@ class Simulator(
         if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.HALF.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
+        this.isValidAccess(addr, MemSize.HALF.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.HALF)))
         state.cache.write(Address(addr, MemSize.HALF))
         this.storeHalfWord(addr, value)
@@ -418,6 +438,7 @@ class Simulator(
         if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
+        this.isValidAccess(addr, MemSize.WORD.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.WORD)))
         state.cache.write(Address(addr, MemSize.WORD))
         this.storeWord(addr, value)
@@ -437,6 +458,7 @@ class Simulator(
         if (!this.settings.mutableText && addr in (MemorySegments.TEXT_BEGIN + 1 - MemSize.WORD.size)..state.getMaxPC().toInt()) {
             throw StoreError("You are attempting to edit the text of the program though the program is set to immutable at address " + Renderer.toHex(addr) + "!")
         }
+        this.isValidAccess(addr, MemSize.LONG.size)
         preInstruction.add(CacheDiff(Address(addr, MemSize.LONG)))
         state.cache.write(Address(addr, MemSize.LONG))
         this.storeLong(addr, value)
