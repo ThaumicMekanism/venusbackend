@@ -18,7 +18,7 @@ val vaddh = Instruction(
             val rs2 = sim.getReg(mcode[InstructionField.RS2]).toInt()
             val upper = (rs1 shr 16).toShort() + (rs2 shr 16).toShort()
             val lower = (rs1.toShort() + rs2.toShort()).toShort().toInt()
-            val rd = (lower shl 16) or upper
+            val rd = (upper shl 16) or lower
             sim.setReg(mcode[InstructionField.RD], rd)
             sim.incrementPC(mcode.length)
         },
