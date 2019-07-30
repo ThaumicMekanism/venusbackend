@@ -15,7 +15,7 @@ var venuspackage = {
             var rs2 = numberToInt(sim.getReg_za3lpa$(mcode.get_cv51c2$(InstructionField$RS2_getInstance())));
             var upper = toShort(rs1 >> 16) + toShort(rs2 >> 16);
             var lower = toShort(toShort(rs1) + toShort(rs2));
-            var rd = upper << 16 | lower;
+            var rd = upper << 16 | (lower & 0xFFFF);
             sim.setReg_135bro$(mcode.get_cv51c2$(InstructionField$RD_getInstance()), rd);
             sim.incrementPC_3p81yu$(mcode.length);
             return Unit;
