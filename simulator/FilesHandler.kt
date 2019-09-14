@@ -8,7 +8,7 @@ class FilesHandler(sim: Simulator) {
         var EOF = -1
     }
     val files = HashMap<Int, FileDescriptor>()
-    var fdCounter = 1
+    var fdCounter = 3
 
     fun openFile(sim: Simulator, filename: String, permissions: Int): Int {
         // open file in VFS here
@@ -22,6 +22,14 @@ class FilesHandler(sim: Simulator) {
                 return EOF
             }
         }
+        /*
+        0 = r (only can read)
+        1 = w (resets file contents and is only writable)
+        2 = a (does not reset file contents but is only writeable)
+        3 = r+ (RW)
+        4 = w+ (RW reset file contents)
+        5 = a+ (RW)
+        */
         val rw = when (permissions) {
             0 -> {
                 if (o == null) {
