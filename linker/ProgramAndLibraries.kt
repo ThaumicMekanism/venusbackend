@@ -28,7 +28,7 @@ class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
                 VFSType.File -> {
                     // Get the text
                     val progText = (obj as VFSFile).readText()
-                    val p = assemble(progText) ?: throw AssemblerError("Could not load the library: $progname")
+                    val p = assemble(progText) ?: throw AssemblerError("Could not load the library: $progname (Note: The library file was found but it could not be assembled)")
                     p.name = progname
                     p
                 }
