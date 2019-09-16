@@ -358,31 +358,53 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".float" -> {
-                checkArgsLength(args, 1)
-                val value = args[0]
-                val float = userStringToFloat(value)
-                val bits = float.toRawBits()
-                prog.addToData(bits.toByte())
-                prog.addToData((bits shr 8).toByte())
-                prog.addToData((bits shr 16).toByte())
-                prog.addToData((bits shr 24).toByte())
-                currentDataOffset += 4
+                for (arg in args) {
+                    try {
+                        val float = userStringToFloat(arg)
+                        val bits = float.toRawBits()
+                        prog.addToData(bits.toByte())
+                        prog.addToData((bits shr 8).toByte())
+                        prog.addToData((bits shr 16).toByte())
+                        prog.addToData((bits shr 24).toByte())
+                    } catch (e: NumberFormatException) {
+                        /* arg is not a number; interpret as label */
+                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                    }
+                    currentDataOffset += 4
+                }
             }
 
             ".double" -> {
-                checkArgsLength(args, 1)
-                val value = args[0]
-                val double = userStringToDouble(value)
-                val bits = double.toRawBits()
-                prog.addToData(bits.toByte())
-                prog.addToData((bits shr 8).toByte())
-                prog.addToData((bits shr 16).toByte())
-                prog.addToData((bits shr 24).toByte())
-                prog.addToData((bits shr 32).toByte())
-                prog.addToData((bits shr 40).toByte())
-                prog.addToData((bits shr 48).toByte())
-                prog.addToData((bits shr 56).toByte())
-                currentDataOffset += 8
+                for (arg in args) {
+                    try {
+                        val double = userStringToDouble(arg)
+                        val bits = double.toRawBits()
+                        prog.addToData(bits.toByte())
+                        prog.addToData((bits shr 8).toByte())
+                        prog.addToData((bits shr 16).toByte())
+                        prog.addToData((bits shr 24).toByte())
+                        prog.addToData((bits shr 32).toByte())
+                        prog.addToData((bits shr 40).toByte())
+                        prog.addToData((bits shr 48).toByte())
+                        prog.addToData((bits shr 56).toByte())
+                    } catch (e: NumberFormatException) {
+                        /* arg is not a number; interpret as label */
+                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                    }
+                    currentDataOffset += 8
+                }
             }
 
             else -> throw AssemblerError("unknown venusbackend.assembler directive $directive")
