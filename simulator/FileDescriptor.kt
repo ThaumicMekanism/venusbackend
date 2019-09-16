@@ -22,7 +22,7 @@ class FileDescriptor(var vfsFile: VFSFile, var fileMetaData: FileMetaData) {
             return null
         }
         dataStream.append(value)
-        return 0
+        return value.length
     }
 
     fun flush(): Int {
