@@ -148,11 +148,25 @@ private fun writeFile(sim: Simulator) {
     val sizeOfItem = sim.getReg(Registers.a4).toInt()
     var offset = 0
     val sb = StringBuilder()
+//    var s = ""
     while (offset < size) {
-        sb.append(sim.loadBytewCache(bufferAddress + offset).toChar())
+        var addr = bufferAddress + offset
+        var byte = sim.loadByte(addr).toShort()
+//        console.log(byte)
+//        if (byte < 0) {
+//            byte = 256 - byte
+//        }
+        console.log(byte)
+//        var char = byte.toChar()
+        var char = byte.toChar()
+        console.log(char)
+//        s += chr
+        sb.append(char)
+//        sb.append(sim.loadBytewCache(bufferAddress + offset).toChar())
         offset++
     }
-    val result = sim.filesHandler.writeFileDescriptor(fdID, sb.toString())
+    var s = sb.toString()
+    val result = sim.filesHandler.writeFileDescriptor(fdID, s)
     sim.setReg(Registers.a0, result)
 }
 
