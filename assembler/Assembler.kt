@@ -100,6 +100,8 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     /** List of all errors encountered */
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
+    /** Preprocessor defines */
+    private val defines = HashMap<String, String>()
 
     fun run(): PassOneOutput {
         doPassOne()
@@ -113,7 +115,27 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
 
                 val offset = getOffset()
 
-                val (labels, args) = Lexer.lexLine(line)
+                var pline = line
+                defines.forEach { (token: String, value: String) ->
+                    val splitline = pline.split(Regex("\\s")).toMutableList()
+                    val tokens = ArrayList<String>()
+                    var diff = false
+                    for (v in splitline) {
+                        if (v == token) {
+                            tokens.add(value)
+                            diff = true
+                        } else {
+                            tokens.add(v)
+                        }
+                    }
+                    if (diff) {
+                        pline = tokens.joinToString(" ")
+                    }
+                }
+
+                preprocess(line)
+
+                val (labels, args) = Lexer.lexLine(pline)
                 for (label in labels) {
                     allow_custom_memory_setments = false
                     val oldOffset = prog.addLabel(label, offset)
@@ -125,7 +147,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 if (args.isEmpty() || args[0].isEmpty()) continue // empty line
 
                 if (isAssemblerDirective(args[0])) {
-                    parseAssemblerDirective(args[0], args.drop(1), line)
+                    parseAssemblerDirective(args[0], args.drop(1), pline)
                 } else {
                     allow_custom_memory_setments = false
                     val expandedInsts = replacePseudoInstructions(args)
@@ -147,6 +169,26 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 p1warnings.clear()
             } catch (e: AssemblerError) {
                 errors.add(AssemblerError(currentLineNumber, e))
+            }
+        }
+    }
+
+    private fun preprocess(line: String) {
+        val DIRECTIVE_DEFINE = "define"
+        val DIRECTIVE_UNDEF = "undef"
+        var pline = line.trim()
+        if (pline.startsWith("#")) {
+            pline = pline.removePrefix("#").trim()
+            if (pline.startsWith(DIRECTIVE_DEFINE)) {
+                pline = pline.removePrefix(DIRECTIVE_DEFINE).trim()
+                val tokens = pline.split(" ").toMutableList()
+                defines[tokens.removeAt(0)] = tokens.joinToString(" ")
+            }
+            if (pline.startsWith(DIRECTIVE_UNDEF)) {
+                pline = pline.removePrefix(DIRECTIVE_UNDEF).trim()
+                val tokens = pline.split(" ")
+                checkArgsLength(tokens, 1)
+                defines.remove(tokens[0])
             }
         }
     }
@@ -407,7 +449,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 }
             }
 
-            else -> throw AssemblerError("unknown venusbackend.assembler directive $directive")
+            else -> throw AssemblerError("unknown assembler directive $directive")
         }
     }
 
