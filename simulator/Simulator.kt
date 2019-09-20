@@ -516,4 +516,36 @@ class Simulator(
         mcode.length = length
         return mcode
     }
+
+//    fun dump(sim: Simulator): CoreDump {
+//        val d = HashMap<String, Any>()
+//        d.put("time", Date.now().toString())
+//        val integer = HashMap<Int, Number>()
+//        val floating = HashMap<Int, Decimal>()
+//        for (i in 1 until 32) {
+//            integer[i] = sim.getReg(i)
+//            floating[i] = sim.getFReg(i)
+//        }
+//        val registers = HashMap<String, HashMap<Int, Number>>()
+//        d.put("registers", registers)
+//        val memory = HashMap<String, Short>()
+//        d.put("memory", memory)
+//        return d
+//    }
 }
+//
+// data class CoreDump(
+//        var time: String,
+//        var regisers: CoreDumpRegisters,
+//        var memory: HashMap<Int, Int>
+// )
+//
+// data class CoreDumpRegisters(
+//        var integer: CoreDumpRegister,
+//        var floating: CoreDumpRegister
+// )
+//
+// data class CoreDumpRegister(
+//        var id: String,
+//        var value: String
+// )
