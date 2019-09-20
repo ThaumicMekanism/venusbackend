@@ -18,6 +18,11 @@ class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
             addProgramImports(prog, seenPrograms, needToImportPrograms)
             AllProgs.add(prog)
         }
+        for (prog in seenPrograms) {
+            if (needToImportPrograms.contains(prog)) {
+                needToImportPrograms.remove(prog)
+            }
+        }
         while (needToImportPrograms.isNotEmpty()) {
             val progname = needToImportPrograms.elementAt(0)
             needToImportPrograms.remove(progname)
