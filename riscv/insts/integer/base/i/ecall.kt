@@ -98,6 +98,23 @@ val ecall = Instruction(
         disasm = RawDisassembler { "ecall" }
 )
 
+enum class Syscall(val syscall: Int) {
+    PRINT_INT(1),
+    PRINT_STR(4),
+    SBRK(9),
+    EXIT(10),
+    PRINT_CHAR(11),
+    OPEN(13),
+    READ(14),
+    WRITE(15),
+    CLOSE(16),
+    EXIT_WITH_CODE(17),
+    FLUSH(18),
+    FEOF(19),
+    FERROR(20),
+    PRINT_HEX(34)
+}
+
 // All file operations will return -1 if the file descriptor is not found.
 private fun openFile(sim: Simulator) {
     /**
@@ -142,10 +159,11 @@ private fun writeFile(sim: Simulator) {
     /**
      * a0=15, a1=filedescriptor, a2=buffer to read data, a3=amt to write, a4=size of each item -> a0=Number of items written
      */
+    // FIXME This needs to be redone to handle different possible errors for results. Currently this is fine due to the error which can be produced.
     val fdID = sim.getReg(Registers.a1).toInt()
     val bufferAddress = sim.getReg(Registers.a2).toInt()
-    val size = sim.getReg(Registers.a3).toInt()
     val sizeOfItem = sim.getReg(Registers.a4).toInt()
+    val size = sim.getReg(Registers.a3).toInt() * sizeOfItem
     var offset = 0
     val sb = StringBuilder()
     while (offset < size) {
@@ -155,9 +173,20 @@ private fun writeFile(sim: Simulator) {
         sb.append(char)
         offset++
     }
-    var s = sb.toString()
-    val result = sim.filesHandler.writeFileDescriptor(fdID, s)
+    val s = sb.toString()
+    var result = sim.filesHandler.writeFileDescriptor(fdID, s)
+    if (result != FilesHandler.EOF) {
+        result /= sizeOfItem
+    }
     sim.setReg(Registers.a0, result)
+}
+
+private fun seekFile(sim: Simulator) {
+//
+}
+
+private fun tellFile(sim: Simulator) {
+//
 }
 
 private fun closeFile(sim: Simulator) {
@@ -246,6 +275,26 @@ private fun exitWithCode(sim: Simulator) {
     sim.exitcode = retVal.toInt()
     sim.ecallMsg = "\nExited with error code $retVal"
     Renderer.printConsole("\nExited with error code $retVal\n")
+}
+
+private fun memdump(sim: Simulator) {
+    /**
+     * Dumps Venus's state to the filename given as a pointer in a1. If a1 points to 0,
+     * then the name is set to "venus.dump"
+     *
+     * a0=22, a1=(optional)Filename pointer
+     */
+    val filepathptr = sim.getReg(Registers.a1)
+    val filepath = if (filepathptr == 0) {
+        "venus.dump"
+    } else {
+        getString(sim, filepathptr)
+    }
+    // TODO Complete me
+    var err = sim.VFS.touch(filepath)
+    if (err == "") {
+        err = sim.VFS.write(filepath, "")
+    }
 }
 
 private fun getString(sim: Simulator, address: Number): String {
