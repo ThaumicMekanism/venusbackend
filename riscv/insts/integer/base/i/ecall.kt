@@ -31,6 +31,7 @@ val ecall = Instruction(
             when (whichCall) {
                 1 -> printInteger(sim)
                 4 -> printString(sim)
+                5 -> atoi(sim)
                 9 -> sbrk(sim)
                 10 -> exit(sim)
                 11 -> printChar(sim)
@@ -54,6 +55,7 @@ val ecall = Instruction(
             when (whichCall) {
                 1L -> printInteger(sim)
                 4L -> printString(sim)
+                5L -> atoi(sim)
                 9L -> sbrk(sim)
                 10L -> exit(sim)
                 11L -> printChar(sim)
@@ -77,6 +79,7 @@ val ecall = Instruction(
             when (whichCall) {
                 QuadWord(1) -> printInteger(sim)
                 QuadWord(4) -> printString(sim)
+                QuadWord(5) -> atoi(sim)
                 QuadWord(9) -> sbrk(sim)
                 QuadWord(10) -> exit(sim)
                 QuadWord(11) -> printChar(sim)
@@ -101,6 +104,7 @@ val ecall = Instruction(
 enum class Syscall(val syscall: Int) {
     PRINT_INT(1),
     PRINT_STR(4),
+    ATOI(5),
     SBRK(9),
     EXIT(10),
     PRINT_CHAR(11),
@@ -246,8 +250,19 @@ private fun printInteger(sim: Simulator) {
 private fun printString(sim: Simulator) {
     val arg = sim.getReg(11)
     val s = getString(sim, arg)
-        sim.ecallMsg += s
-        Renderer.printConsole(s)
+    sim.ecallMsg += s
+    Renderer.printConsole(s)
+}
+
+private fun atoi(sim: Simulator) {
+    val str_pointer = sim.getReg(Registers.a1)
+    val s = getString(sim, str_pointer)
+    val n = try {
+        s.toInt()
+    } catch (e: NumberFormatException) {
+        0
+    }
+    sim.setReg(Registers.a0, n)
 }
 
 private fun sbrk(sim: Simulator) {
