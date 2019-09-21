@@ -162,7 +162,7 @@ class Simulator(
         while (sp < MemorySegments.STACK_BEGIN && settings.setRegesOnInit) {
             this.state.mem.removeByte(sp)
             sp++
-            setReg(2, sp)
+            setReg(Registers.sp, sp)
         }
     }
 
@@ -180,38 +180,20 @@ class Simulator(
     }
 
     fun addArg(arg: String) {
-        if (arg == "" || !settings.setRegesOnInit) {
-            return
-        }
         args.add(arg)
-        var spv = if (getReg(2) == MemorySegments.STACK_BEGIN) {
-            getReg(2)
-        } else {
-            getReg(11)
-        } - 1
-        storeByte(spv, 0)
-        setReg(2, spv)
-        for (c in arg.reversed()) {
-            spv = getReg(2) - 1
-            storeByte(spv, c.toInt())
-            setReg(2, spv)
-        }
-        /*Got to add the null terminator as well!*/
-        /**
-         * We need to store a0 (x10) to the argc and a1 (x11) to argv.
-         */
-        setReg(10, args.size)
-        setReg(11, spv)
-        setReg(2, (spv - (spv % 4)))
-        try {
-            Renderer.updateRegister(2, getReg(2))
-            Renderer.updateRegister(10, getReg(10))
-            Renderer.updateRegister(11, getReg(11))
-            Renderer.updateMemory(Renderer.activeMemoryAddress)
-        } catch (e: Throwable) {}
+        removeAllArgsFromMem()
+        addArgsToMem()
+    }
+
+    fun addArg(newargs: List<String>) {
+        args.addAll(newargs)
+        removeAllArgsFromMem()
+        addArgsToMem()
     }
 
     fun addArgsToMem() {
+        val registerSize = state.registerWidth / 8
+        val intSize = 4
         if (!settings.setRegesOnInit) {
             return
         }
@@ -220,27 +202,41 @@ class Simulator(
         } else {
             getReg(11)
         } - 1
+        var argv = ArrayList<Number>()
         for (arg in args) {
-            spv = getReg(2) - 1
-            storeByte(spv, 0)
-            setRegNoUndo(2, spv)
-            for (c in arg.reversed()) {
-                spv = getReg(2) - 1
-                storeByte(spv, c.toInt())
-                setRegNoUndo(2, spv)
-            }
+            spv = getReg(Registers.sp) - 1
             /*Got to add the null terminator as well!*/
-            /**
-             * We need to store a0 (x10) to the argc and a1 (x11) to argv.
-             */
-            setRegNoUndo(10, args.size)
-            setRegNoUndo(11, spv)
+            storeByte(spv, 0)
+            setRegNoUndo(Registers.sp, spv)
+            for (c in arg.reversed()) {
+                spv = getReg(Registers.sp) - 1
+                storeByte(spv, c.toInt())
+                setRegNoUndo(Registers.sp, spv)
+            }
+            argv.add(spv)
         }
-        setRegNoUndo(2, spv - (spv % 4))
+        spv -= (spv % registerSize)
+        /**
+         * Next we need to create the argv array.
+         */
+        // First have to allocate a new space and load the null to the end of the array.
+        spv -= intSize
+        storeWord(spv, 0)
+        // Next, we need to add the different arg strings to our argv array.
+        for (arg in argv.reversed()) {
+            spv -= intSize
+            storeWord(spv, arg)
+        }
+        /**
+         * We need to store a0 (x10) to the argc and a1 (x11) to argv.
+         */
+        setRegNoUndo(Registers.a0, args.size)
+        setRegNoUndo(Registers.a1, spv)
+        setRegNoUndo(Registers.sp, spv)
         try {
-            Renderer.updateRegister(2, getReg(2))
-            Renderer.updateRegister(10, getReg(10))
-            Renderer.updateRegister(11, getReg(11))
+            Renderer.updateRegister(Registers.sp, getReg(Registers.sp))
+            Renderer.updateRegister(Registers.a0, getReg(Registers.a0))
+            Renderer.updateRegister(Registers.a1, getReg(Registers.a1))
             Renderer.updateMemory(Renderer.activeMemoryAddress)
         } catch (e: Throwable) {}
     }
