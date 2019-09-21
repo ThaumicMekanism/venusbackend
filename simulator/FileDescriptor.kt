@@ -26,7 +26,9 @@ class FileDescriptor(var vfsFile: VFSFile, var fileMetaData: FileMetaData) {
     }
 
     fun flush(): Int {
-        vfsFile.setText(this.dataStream.toString())
+        if (fileMetaData.writeable) {
+            vfsFile.setText(this.dataStream.toString())
+        }
         return 0
     }
 
