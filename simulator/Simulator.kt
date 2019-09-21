@@ -203,7 +203,9 @@ class Simulator(
             getReg(11)
         } - 1
         var argv = ArrayList<Number>()
-        for (arg in args) {
+        var tmpargs = arrayListOf(linkedProgram.prog.name)
+        tmpargs.addAll(args)
+        for (arg in tmpargs) {
             spv = getReg(Registers.sp) - 1
             /*Got to add the null terminator as well!*/
             storeByte(spv, 0)
@@ -230,7 +232,7 @@ class Simulator(
         /**
          * We need to store a0 (x10) to the argc and a1 (x11) to argv.
          */
-        setRegNoUndo(Registers.a0, args.size)
+        setRegNoUndo(Registers.a0, tmpargs.size)
         setRegNoUndo(Registers.a1, spv)
         setRegNoUndo(Registers.sp, spv)
         try {
