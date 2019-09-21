@@ -11,5 +11,5 @@ data class SimulatorSettings(
     var maxSteps: Int = 500000,
     var ASLR: Boolean = false,
     var NX_bit: Boolean = false,
-    var allowAccessBtnStackHeap: Boolean = true
+    var allowAccessBtnStackHeap: Boolean = false
 )
