@@ -52,6 +52,10 @@ object Linker {
 
         val progs = progsAndLibs.AllProgs
 
+        if (progs.size > 0) {
+            linkedProgram.prog.name = progs[0].name
+        }
+
         for (prog in progs) {
             for ((label, offset) in prog.labels) {
                 val start = if (offset >= MemorySegments.STATIC_BEGIN) {
