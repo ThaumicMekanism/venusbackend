@@ -104,7 +104,7 @@ class Simulator(
     }
 
     fun run() {
-        while (!isDone() && cycles <= settings.maxSteps) {
+        while (!isDone() && (cycles <= settings.maxSteps || settings.maxSteps < 0)) {
             step()
         }
         if (cycles > settings.maxSteps) {
