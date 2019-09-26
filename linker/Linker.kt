@@ -55,7 +55,6 @@ object Linker {
         if (progs.size > 0) {
             linkedProgram.prog.name = progs[0].name
         }
-
         for (prog in progs) {
             for ((label, offset) in prog.labels) {
                 val start = if (offset >= MemorySegments.STATIC_BEGIN) {
@@ -111,7 +110,15 @@ object Linker {
             }
 
             textTotalOffset += prog.textSize
-            dataTotalOffset += prog.dataSize
+            /* These two last lines are an ugly hack to fix the la of an import file generating a fixed offset already. */
+            dataTotalOffset += if (prog != progs.last()) {
+                for (i in 0 until prog.textSize) {
+                    linkedProgram.prog.addToData(0)
+                }
+                prog.dataSize + prog.textSize
+            } else {
+                prog.dataSize
+            }
         }
 
         for ((relocator, offset, label) in toRelocate) {
