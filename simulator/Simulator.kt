@@ -106,9 +106,10 @@ class Simulator(
     fun run() {
         while (!isDone() && (cycles <= settings.maxSteps || settings.maxSteps < 0)) {
             step()
+            print("Step: $cycles\n ")
         }
-        if (cycles > settings.maxSteps) {
-            throw SimulatorError("Ran for more than max allowed steps!")
+        if (settings.maxSteps >= 0 && cycles > settings.maxSteps) {
+            throw SimulatorError("Ran for more than max allowed steps (${settings.maxSteps})!")
         }
     }
 
