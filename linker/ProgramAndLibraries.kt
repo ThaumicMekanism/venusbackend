@@ -11,29 +11,35 @@ import venusbackend.riscv.Program
 class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
     val AllProgs = ArrayList<Program>()
     init {
-        val seenPrograms = HashSet<String>()
-        val needToImportPrograms = HashSet<String>()
+        val seenPrograms = HashMap<String, ImportProgramData>()
+        val needToImportPrograms = HashMap<String, ImportProgramData>()
+        val mainProg = "the main program"
         for (prog in progs) {
-            seenPrograms.add(prog.name)
-            addProgramImports(prog, seenPrograms, needToImportPrograms)
+            seenPrograms[prog.name] = ImportProgramData(prog.name, mainProg)
+            addProgramImports(prog, mainProg, seenPrograms, needToImportPrograms)
             AllProgs.add(prog)
         }
-        for (prog in seenPrograms) {
-            if (needToImportPrograms.contains(prog)) {
-                needToImportPrograms.remove(prog)
+        val keysToRemove = HashSet<String>()
+        for (sprog in seenPrograms.values) {
+            if (needToImportPrograms.containsKey(sprog.progPath)) {
+                keysToRemove.add(sprog.progPath)
             }
         }
+        for (ktr in keysToRemove) {
+            needToImportPrograms.remove(ktr)
+        }
         while (needToImportPrograms.isNotEmpty()) {
-            val progname = needToImportPrograms.elementAt(0)
+            val progname = needToImportPrograms.keys.elementAt(0)
+            val progData = needToImportPrograms[progname]!!
             needToImportPrograms.remove(progname)
             // Get the file
-            val obj = vfs.getObjectFromPath(progname) ?: throw AssemblerError("Could not find the library: $progname")
+            val obj = vfs.getObjectFromPath(progname) ?: throw AssemblerError("Could not find the library: $progname. This library was imported by ${progData.importingProgram}.")
 
             val prog = when (obj.type) {
                 VFSType.File -> {
                     // Get the text
                     val progText = (obj as VFSFile).readText()
-                    val p = assemble(progText) ?: throw AssemblerError("Could not load the library: $progname (Note: The library file was found but it could not be assembled)")
+                    val p = assemble(progText) ?: throw AssemblerError("Could not load the library: $progname (Note: The library file was found but it could not be assembled) This library was imported by ${progData.importingProgram}.")
                     p.name = progname
                     p
                 }
@@ -41,21 +47,21 @@ class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
                     (obj as VFSProgram).getProgram()
                 }
                 else -> {
-                    throw AssemblerError("The path for $progname is not a file or program!")
+                    throw AssemblerError("The path for $progname is not a file or program! This library was imported by ${progData.importingProgram}.")
                 }
             }
 
             // Add program to seen programs and All progs.
             AllProgs.add(prog)
-            seenPrograms.add(progname)
-            addProgramImports(prog, seenPrograms, needToImportPrograms)
+            seenPrograms[progname] = progData
+            addProgramImports(prog, progname, seenPrograms, needToImportPrograms)
         }
     }
 
-    fun addProgramImports(prog: Program, SeenPrograms: HashSet<String>, needToImportPrograms: HashSet<String>) {
+    fun addProgramImports(prog: Program, progname: String, SeenPrograms: HashMap<String, ImportProgramData>, needToImportPrograms: HashMap<String, ImportProgramData>) {
         for (import in prog.imports) {
             if (!SeenPrograms.contains(import)) {
-                needToImportPrograms.add(import)
+                needToImportPrograms[import] = ImportProgramData(import, progname)
             }
         }
     }
