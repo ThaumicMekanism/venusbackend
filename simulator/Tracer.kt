@@ -27,10 +27,23 @@ class Tracer(var sim: Simulator) {
 
     fun trace() {
         traceStart()
+        var err: SimulatorError? = null
         while (!sim.isDone()) {
-            traceStep()
+            try {
+                traceStep()
+            } catch (e: SimulatorError) {
+                err = e
+                break
+            }
         }
         traceEnd()
+        if (err != null) {
+            this.traceAddError(err)
+        }
+    }
+
+    fun traceAddError(err: SimulatorError) {
+        this.tr.trace.add(Trace(false, false, "", Array(0) { 0 }, MachineCode(0), 0, 0, error = err))
     }
 
     fun traceFullReset() {

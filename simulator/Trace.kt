@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
  * Created by Thaumic on 7/14/2018.
  */
 
-class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Number>, inst: MachineCode, line: Int, pc: Number) {
+class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Number>, inst: MachineCode, line: Int, pc: Number, error: SimulatorError? = null) {
     var branched = false
     var jumped = false
     var ecallMsg = ""
@@ -21,6 +21,7 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Nu
     var line = 0
     var pc: Number = 0
     var prevTrace: Trace? = null
+    var error: SimulatorError? = null
 
     init {
         this.ecallMsg = ecallMsg
@@ -30,11 +31,15 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Nu
         this.inst = inst
         this.line = line
         this.pc = pc
+        this.error = error
     }
 
     fun getString(format: String, base: Int): String {
-        if (this.ecallMsg == "exiting the venusbackend.simulator") {
-            return "exiting the venusbackend.simulator\n"
+        if (this.error != null) {
+            return this.error.toString()
+        }
+        if (this.ecallMsg == "exiting the simulator") {
+            return "exiting the simulator\n"
         }
         var f = format.replace("%output%", this.ecallMsg).replace("%inst%", numToBase(base, this.inst.get(InstructionField.ENTIRE), 32, true)).replace("%pc%", numToBase(base, this.getPC(), 32, false)).replace("%line%", numToBase(base, this.line, 16, false))
         for (i in 0..(regs.size - 1)) {
