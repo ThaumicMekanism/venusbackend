@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.integer.extensions.multiply.r
 
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.types.RTypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.RTypeInstruction
 
 val divw = RTypeInstruction(
         name = "divw",

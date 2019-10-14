@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.numbers.toQuadWord
-import venusbackend.riscv.insts.dsl.types.ShiftImmediateInstruction
+import venusbackend.riscv.insts.dsl.types.base.ShiftImmediateInstruction
 
 val srai = ShiftImmediateInstruction(
         name = "srai",

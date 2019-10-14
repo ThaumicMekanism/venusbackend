@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating
 
-import venusbackend.riscv.insts.dsl.types.floating.FRRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.floating.FRRTypeInstruction
 
 val fcvtds = FRRTypeInstruction(
         name = "fcvt.d.s",

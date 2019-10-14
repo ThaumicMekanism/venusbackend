@@ -6,7 +6,7 @@ package venusbackend.riscv.insts
 /**
  * Thrown when errors occur when an instruction is not supported by the instruction set.
  */
-class InstructionNotSupportedError : Throwable {
+open class InstructionNotSupportedError : Throwable {
     /**
      * @param msg the message to error with
      */

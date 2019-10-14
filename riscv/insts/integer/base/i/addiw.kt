@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.types.ITypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.ITypeInstruction
 
 val addiw = ITypeInstruction(
         name = "addiw",

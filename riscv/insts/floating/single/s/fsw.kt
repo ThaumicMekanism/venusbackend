@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.single.s
 
-import venusbackend.riscv.insts.dsl.types.floating.FSTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.floating.FSTypeInstruction
 
 /*Single-Precision*/
 

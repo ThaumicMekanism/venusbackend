@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.numbers.toQuadWord
-import venusbackend.riscv.insts.dsl.types.ITypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.ITypeInstruction
 import venusbackend.riscv.insts.dsl.compareUnsigned
 import venusbackend.riscv.insts.dsl.compareUnsignedLong
 import venusbackend.riscv.insts.dsl.compareUnsignedQuadWord

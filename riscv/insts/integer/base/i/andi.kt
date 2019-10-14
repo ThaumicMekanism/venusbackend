@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.i
 
-import venusbackend.riscv.insts.dsl.types.ITypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.ITypeInstruction
 
 val andi = ITypeInstruction(
         name = "andi",

@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.extensions.atomic.r
 
-import venusbackend.riscv.insts.dsl.types.AMORTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.atomic.AMORTypeInstruction
 
 val amominuweval32 = { data: Int, vrs2: Int -> minOf(data xor Int.MIN_VALUE, vrs2 xor Int.MIN_VALUE) }
 

@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.r
 
-import venusbackend.riscv.insts.dsl.types.floating.FclassRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.floating.FclassRTypeInstruction
 
 /*TODO fix so this is better.*/
 val fclassd = FclassRTypeInstruction(

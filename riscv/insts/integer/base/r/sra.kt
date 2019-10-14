@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.r
 
-import venusbackend.riscv.insts.dsl.types.RTypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.RTypeInstruction
 import venusbackend.shr
 import kotlin.experimental.and
 

@@ -3,7 +3,7 @@ package venusbackend.riscv.insts.integer.extensions.multiply.r
 import venusbackend.numbers.QuadWord
 import venusbackend.numbers.toDoubleQuadWord
 import venusbackend.numbers.toQuadWord
-import venusbackend.riscv.insts.dsl.types.RTypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.RTypeInstruction
 
 val divu = RTypeInstruction(
         name = "divu",

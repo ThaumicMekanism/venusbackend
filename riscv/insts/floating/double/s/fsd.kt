@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.s
 
-import venusbackend.riscv.insts.dsl.types.floating.FSTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.floating.FSTypeInstruction
 
 val fsd = FSTypeInstruction(
         name = "fsd",

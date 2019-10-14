@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.integer.base.s
 
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.types.STypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.STypeInstruction
 
 val sd = STypeInstruction(
         name = "sd",

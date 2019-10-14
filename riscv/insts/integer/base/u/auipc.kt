@@ -3,7 +3,7 @@ package venusbackend.riscv.insts.integer.base.u
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.types.UTypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.UTypeInstruction
 
 val auipc = UTypeInstruction(
         name = "auipc",

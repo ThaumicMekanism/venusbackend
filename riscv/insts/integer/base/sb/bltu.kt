@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.base.sb
 
-import venusbackend.riscv.insts.dsl.types.BTypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.BTypeInstruction
 import venusbackend.riscv.insts.dsl.compareUnsigned
 import venusbackend.riscv.insts.dsl.compareUnsignedLong
 import venusbackend.riscv.insts.dsl.compareUnsignedQuadWord

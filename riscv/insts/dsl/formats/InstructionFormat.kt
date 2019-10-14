@@ -3,11 +3,15 @@ package venusbackend.riscv.insts.dsl.formats
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 
-data class FieldEqual(val ifield: InstructionField, val required: Int)
+data class FieldEqual(val ifield: InstructionField, val required: Int, val not: Boolean = false)
 
 open class InstructionFormat(val length: Int, val ifields: List<FieldEqual>) {
     fun matches(mcode: MachineCode): Boolean = ifields.all {
-        (ifield, required) -> mcode[ifield].toInt() == required
+        (ifield, required, bool) -> if (bool) {
+            mcode[ifield].toInt() != required
+        } else {
+            mcode[ifield].toInt() == required
+        }
     }
 
     fun fill(): MachineCode {

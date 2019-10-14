@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.single.r
 
-import venusbackend.riscv.insts.dsl.types.floating.FtRTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.floating.FtRTypeInstruction
 
 /*Single-Precision*/
 val fmvxs = FtRTypeInstruction(

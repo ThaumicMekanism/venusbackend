@@ -2,7 +2,7 @@ package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.insts.InstructionNotSupportedError
-import venusbackend.riscv.insts.dsl.types.ShiftWImmediateInstruction
+import venusbackend.riscv.insts.dsl.types.base.ShiftWImmediateInstruction
 
 val sraiw = ShiftWImmediateInstruction(
         name = "sraiw",

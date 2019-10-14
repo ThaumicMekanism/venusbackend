@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.floating.double.r
 
-import venusbackend.riscv.insts.dsl.types.floating.RtFTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.floating.RtFTypeInstruction
 import venusbackend.riscv.insts.floating.Decimal
 
 val fcvtdw = RtFTypeInstruction(

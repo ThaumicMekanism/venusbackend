@@ -1,7 +1,7 @@
 package venusbackend.riscv.insts.integer.base.i
 
 import venusbackend.numbers.toQuadWord
-import venusbackend.riscv.insts.dsl.types.LoadTypeInstruction
+import venusbackend.riscv.insts.dsl.types.base.LoadTypeInstruction
 
 val lhu = LoadTypeInstruction(
         name = "lhu",

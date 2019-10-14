@@ -1,6 +1,6 @@
 package venusbackend.riscv.insts.integer.extensions.atomic.r
 
-import venusbackend.riscv.insts.dsl.types.AMORTypeInstruction
+import venusbackend.riscv.insts.dsl.types.extensions.atomic.AMORTypeInstruction
 
 val amoandweval32 = { data: Int, vrs2: Int -> data and vrs2 }
 
