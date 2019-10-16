@@ -9,7 +9,7 @@ object Registers {
     val t0 = 5
     val t1 = 6
     val t2 = 7
-    val s0 = 9
+    val s0 = 8
     val fp = 8
     val s1 = 9
     val a0 = 10

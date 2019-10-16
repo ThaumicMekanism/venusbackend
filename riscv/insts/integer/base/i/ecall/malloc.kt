@@ -16,11 +16,11 @@ nodeAddr^
 */
 
 data class MallocNode(
-        var size: Int,
-        var free: Int,
-        var nextNode: Int,
-        var prevNode: Int,
-        var nodeAddr: Int
+    var size: Int,
+    var free: Int,
+    var nextNode: Int,
+    var prevNode: Int,
+    var nodeAddr: Int
 ) {
     companion object {
         val lowBuffer = 0
@@ -29,6 +29,7 @@ data class MallocNode(
         val upperMagic: Int = 0x3CBCBCBC
         val lowerMagic: Int = 0x3CDCDCDC
         val minSize: Int = 1
+        val nodes: HashMap<Int, MallocNode> = HashMap()
         fun loadBlock(sim: Simulator, nodeAddr: Int): MallocNode? {
             if (nodeAddr == 0) {
                 return null
@@ -36,7 +37,7 @@ data class MallocNode(
             val lM = sim.loadWordwCache(nodeAddr + lowBuffer)
             val uM = sim.loadWordwCache(nodeAddr + lowBuffer + 20)
             if ((uM != upperMagic) || (lM != lowerMagic)) {
-                print("The magic value for this malloc node is incorrect!\n")
+                print("The magic value for this malloc node is incorrect! This means you are overriding malloc metadata!\n")
                 print(this)
                 return null
             }
@@ -55,27 +56,36 @@ data class MallocNode(
     }
 
     fun storeMagic(sim: Simulator) {
+        nodes[this.nodeAddr] = this
         sim.storeWordwCache(this.nodeAddr, lowerMagic)
         sim.storeWordwCache(this.nodeAddr + lowBuffer + 20, upperMagic)
     }
 
     fun storeSize(sim: Simulator) {
+        nodes[this.nodeAddr] = this
         sim.storeWordwCache(this.nodeAddr + lowBuffer + 4, this.size)
     }
 
     fun storeFree(sim: Simulator) {
+        nodes[this.nodeAddr] = this
         sim.storeWordwCache(this.nodeAddr + lowBuffer + 8, this.free)
     }
 
     fun storeNextNode(sim: Simulator) {
+        nodes[this.nodeAddr] = this
         sim.storeWordwCache(this.nodeAddr + lowBuffer + 12, this.nextNode)
     }
 
     fun storePrevNode(sim: Simulator) {
+        nodes[this.nodeAddr] = this
         sim.storeWordwCache(this.nodeAddr + lowBuffer + 16, this.prevNode)
     }
 
     fun storeNode(sim: Simulator) {
+        if (this.nodeAddr == 0) {
+            print("Prevented a store of a null malloc node!\n")
+            return
+        }
         this.storeMagic(sim)
         this.storeSize(sim)
         this.storeFree(sim)
@@ -95,6 +105,14 @@ data class MallocNode(
         return this.free != 0
     }
 
+    fun isNull(): Boolean {
+        return this.nodeAddr == 0
+    }
+
+    fun isSentinel(): Boolean {
+        return this.size == 0 && !this.isFree() && this.isPrevNull()
+    }
+
     fun canFit(size: Int): Boolean {
         return this.isFree() && (this.size >= size)
     }
@@ -104,20 +122,25 @@ data class MallocNode(
     }
 
     fun getNextNode(sim: Simulator): MallocNode? {
-        return loadBlock(sim, this.nextNode)
+        return if (this.nextNode == 0) {
+            MallocNode(0, 1, 0, 0, 0)
+        } else {
+            loadBlock(sim, this.nextNode)
+        }
     }
 
     fun getPrevNode(sim: Simulator): MallocNode? {
         return loadBlock(sim, this.prevNode)
     }
 
-    fun allocateNode(sim: Simulator, wantedSize: Int, calloc: Boolean=false): Boolean {
+    fun allocateNode(sim: Simulator, wantedSize: Int, calloc: Boolean = false): Boolean {
         if (this.size < wantedSize) {
             return false
         }
         this.free = 0
         if (calloc) {
             if (sim.memset(this.dataAddr(), 0, wantedSize) == 0) {
+                this.storeNode(sim)
                 return false
             }
         }
@@ -125,55 +148,102 @@ data class MallocNode(
             val newNodeAddr = this.dataAddr() + wantedSize
             val newNodeSize = this.size - (wantedSize + MallocNode.sizeof)
             val newNode = MallocNode(newNodeSize, 1, this.nextNode, this.nodeAddr, newNodeAddr)
-            val nextNode = getNextNode(sim)!!
-            nextNode.prevNode = newNodeAddr
+            if (this.nextNode != 0) {
+                val nextNodeMetadata = getNextNode(sim)!!
+                nextNodeMetadata.prevNode = newNodeAddr
+                nextNodeMetadata.storeNode(sim)
+            }
             this.nextNode = newNodeAddr
             this.size = wantedSize
             newNode.storeNode(sim)
-            nextNode.storeNode(sim)
         }
         this.storeNode(sim)
         return true
     }
 
     fun freeNode(sim: Simulator) {
+        if (this.isFree()) {
+            print("Double free!\n")
+            return
+        }
+        if (this.isSentinel()) {
+            print("You cannot free the sentinel node!\n")
+            return
+        }
         this.free = 1
         this.storeFree(sim)
         var next: MallocNode = this
+        var prev: MallocNode = this
         var s = 0
-        while (!next.isNextNull()) {
+
+        while (next.getNextNode(sim)!!.isFree()) {
             next = next.getNextNode(sim)!!
-            if (!next.isFree()) {
+            if (next.isNull()) {
                 break
             }
             s += MallocNode.sizeof + next.size
         }
-        var prev = this
-        while (!prev.isPrevNull()) {
+
+        while (!prev.isSentinel() && prev.getPrevNode(sim)?.isFree()!!) {
             prev = prev.getPrevNode(sim)!!
-            if (prev.isPrevNull()) { // Is this needed?
-                break
-            }
-            if (!prev.isFree()) {
-                break
-            }
-            s += MallocNode.sizeof + prev.size
+            s += MallocNode.sizeof + next.size
         }
+
         if (this != next || this != prev) {
             if (this != prev) {
-                s += MallocNode.sizeof + this.size
+                s += MallocNode.sizeof + next.size
             }
             prev.size += s
+
             prev.nextNode = next.nodeAddr
             next.prevNode = prev.nodeAddr
-            next.storeNode(sim)
+            if (!next.isNull()) {
+                next.storeNode(sim)
+            }
             prev.storeNode(sim)
         }
+
+//        while (!next.isNull()) {
+//            next = next.getNextNode(sim)!!
+//            if (!next.isFree()) {
+//                break
+//            }
+//            s += MallocNode.sizeof + next.size
+//        }
+//        var prev = this
+//        while (!prev.isPrevNull() && prev.getPrevNode(sim)?.isFree() == true && prev.getPrevNode(sim)?.isPrevNull() != true) {
+//            if (!prev.isFree()) {
+//                break
+//            }
+//            prev = prev.getPrevNode(sim)!!
+//            s += MallocNode.sizeof + prev.size
+//        }
+//        if (this != next || this != prev) {
+//            if (this != prev) {
+//                s += MallocNode.sizeof + this.size
+//            }
+//            prev.size += s
+//
+//            prev.nextNode = next.nodeAddr
+//            next.prevNode = prev.nodeAddr
+//            next.storeNode(sim)
+//            prev.storeNode(sim)
+//        }
     }
 }
 
 class Alloc(val sim: Simulator) {
-    val sentinel = MallocNode(0, 0, 0, 0, 0)
+    var initialized = false
+    var sentinelMetadata: Int = 0
+
+    fun initialize() {
+        sentinelMetadata = sim.getHeapEnd().toInt()
+        val sentinel = MallocNode(0, 0, 0, 0, sentinelMetadata)
+        sim.addHeapSpace(MallocNode.sizeof + sentinel.size)
+        sentinel.storeNode(sim)
+        initialized = true
+    }
+
     companion object {
         fun getMetadata(ptr: Int): Int {
             val loc = ptr - MallocNode.sizeof
@@ -184,12 +254,20 @@ class Alloc(val sim: Simulator) {
             }
         }
     }
+    var alwaysCalloc = false
 
-    fun malloc(size: Int, calloc: Boolean = false): Int {
+    fun malloc(size: Int, calloc: Boolean = alwaysCalloc): Int {
+        if (!initialized) {
+            initialize()
+        }
         if (size <= 0) {
             return 0
         }
-        var m = this.sentinel
+        var m = MallocNode.loadBlock(sim, sentinelMetadata) ?: run {
+            print("Failed to get the sentinel metadata block!\n")
+            return 0
+        }
+
         while (!m.isNextNull()) {
             m = m.getNextNode(sim)!!
             if (m.canFit(size)) {
@@ -198,10 +276,14 @@ class Alloc(val sim: Simulator) {
                 }
             }
         }
-        // TODO DO rlim check
+        val sizeToAdd = size + MallocNode.sizeof
+        // TODO DO rlim check Currently there is a janky check
+        if (sim.willHeapOverrideStack(sizeToAdd)) {
+            return 0
+        }
 
         val newMallocNode = MallocNode(size, 0, 0, m.nodeAddr, sim.getHeapEnd().toInt())
-        sim.addHeapSpace(size)
+        sim.addHeapSpace(sizeToAdd)
         m.nextNode = newMallocNode.nodeAddr
         m.storeNextNode(sim)
         newMallocNode.storeNode(sim)
@@ -230,7 +312,7 @@ class Alloc(val sim: Simulator) {
         if (newBlock == 0) {
             return 0
         }
-        sim.memcpy(newBlock, m.dataAddr(), m.size)
+        sim.memcpy(newBlock, m.dataAddr(), size)
         m.freeNode(sim)
         return newBlock
     }
@@ -246,12 +328,27 @@ class Alloc(val sim: Simulator) {
      * Returns -1 if an error has occurred (aka a corrupted list)
      */
     fun numActiveBlocks(): Int {
+        if (!initialized) {
+            return 0
+        }
         var counter = 0
-        var m = sentinel
+        var m = MallocNode.loadBlock(sim, sentinelMetadata) ?: run {
+            print("Failed to get the sentinel metadata block!\n")
+            return -1
+        }
+        if (m.isNextNull()) {
+            // We do not want to count the sentinel block!
+            return counter
+        }
+        m = m.getNextNode(sim) ?: return -1
         while (!m.isNextNull()) {
-            counter++
+            if (!m.isFree()) {
+                if (m.size > 0) { // We want to ignore the sentinel node.
+                    counter++
+                }
+            }
             // If we fail to get the next node when it should exist, we must return -1 to indicate an error.
-            m = m.getNextNode(this.sim)?: return -1
+            m = m.getNextNode(this.sim) ?: return -1
         }
         return counter
     }

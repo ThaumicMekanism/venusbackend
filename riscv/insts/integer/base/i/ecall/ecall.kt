@@ -27,7 +27,7 @@ val ecall = Instruction(
         parser = DoNothingParser,
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
-            val whichCall = sim.getReg(10)
+            val whichCall = sim.getReg(Registers.a0)
             when (whichCall) {
                 1 -> printInteger(sim)
                 4 -> printString(sim)
@@ -44,6 +44,7 @@ val ecall = Instruction(
                 19 -> feof(sim)
                 20 -> ferror(sim)
                 34 -> printHex(sim)
+                0x3CC -> clib(sim)
                 else -> Renderer.printConsole("Invalid ecall $whichCall")
             }
             if (!(whichCall == 10 || whichCall == 17)) {

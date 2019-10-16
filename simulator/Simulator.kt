@@ -115,6 +115,19 @@ class Simulator(
         }
     }
 
+    fun runToBreakpoint() {
+        if (!isDone()) {
+            // We need to step past a breakpoint.
+            step()
+        }
+        while (!isDone() && !atBreakpoint() && (cycles <= settings.maxSteps || settings.maxSteps < 0)) {
+            step()
+        }
+        if (settings.maxSteps >= 0 && cycles > settings.maxSteps) {
+            throw SimulatorError("Ran for more than max allowed steps (${settings.maxSteps})!")
+        }
+    }
+
     fun step(): List<Diff> {
         this.branched = false
         this.jumped = false
@@ -485,9 +498,16 @@ class Simulator(
     fun getHeapEnd() = state.getHeapEnd()
 
     fun addHeapSpace(bytes: Number) {
+        if (willHeapOverrideStack(bytes)) {
+            throw SimulatorError("The heap has grown into the stack.")
+        }
         preInstruction.add(HeapSpaceDiff(state.getHeapEnd()))
         state.incHeapEnd(bytes)
         postInstruction.add(HeapSpaceDiff(state.getHeapEnd()))
+    }
+
+    fun willHeapOverrideStack(bytes: Number): Boolean {
+        return (getHeapEnd() + bytes) >= getReg(Registers.sp)
     }
 
     private fun getInstructionLength(short0: Int): Int {
