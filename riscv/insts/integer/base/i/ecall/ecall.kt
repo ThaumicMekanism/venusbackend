@@ -1,4 +1,4 @@
-package venusbackend.riscv.insts.integer.base.i
+package venusbackend.riscv.insts.integer.base.i.ecall
 
 import venus.Renderer
 import venusbackend.compareTo

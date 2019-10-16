@@ -9,6 +9,7 @@ import venusbackend.linker.LinkedProgram
 import venusbackend.riscv.*
 import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.floating.Decimal
+import venusbackend.riscv.insts.integer.base.i.ecall.Alloc
 import venusbackend.simulator.diffs.*
 
 /* ktlint-enable no-wildcard-imports */
@@ -35,6 +36,8 @@ class Simulator(
     val instOrderMapping = HashMap<Int, Int>()
     val invInstOrderMapping = HashMap<Int, Int>()
     var exitcode: Int? = null
+
+    val alloc: Alloc = Alloc(this)
 
     init {
         (state).getReg(1)
@@ -513,6 +516,30 @@ class Simulator(
         val mcode = MachineCode(intStruction)
         mcode.length = length
         return mcode
+    }
+
+    fun memcpy(destaddr: Int, srcaddr: Int, size: Int): Int {
+        var dest = destaddr
+        var src = srcaddr
+        var s = size
+        while (s > 0) {
+            storeByte(dest, loadByte(src))
+            dest++
+            src++
+            s--
+        }
+        return destaddr
+    }
+
+    fun memset(destaddr: Int, item: Int, size: Int): Int {
+        var dest = destaddr
+        var s = size
+        while (s > 0) {
+            storeByte(dest, item)
+            dest++
+            s--
+        }
+        return destaddr
     }
 
 //    fun dump(sim: Simulator): CoreDump {
