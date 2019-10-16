@@ -28,7 +28,8 @@ class Simulator(
     private val history = History()
     private val preInstruction = ArrayList<Diff>()
     private val postInstruction = ArrayList<Diff>()
-    private val breakpoints: Array<Boolean>
+//    private val breakpoints: Array<Boolean>
+    private val breakpoints = HashSet<Int>()
     var args = ArrayList<String>()
     var ebreak = false
     var stdout = ""
@@ -74,7 +75,7 @@ class Simulator(
             }
         }
 
-        breakpoints = Array(linkedProgram.prog.insts.size, { false })
+//        breakpoints = Array(linkedProgram.prog.insts.size, { false })
     }
 
     fun isDone(): Boolean {
@@ -307,8 +308,15 @@ class Simulator(
     }
 
     fun toggleBreakpointAt(idx: Int): Boolean {
-        breakpoints[idx] = !breakpoints[idx]
-        return breakpoints[idx]
+//        breakpoints[idx] = !breakpoints[idx]
+//        return breakpoints[idx]
+        if (breakpoints.contains(idx)) {
+            breakpoints.remove(idx)
+            return false
+        } else {
+            breakpoints.add(idx)
+            return true
+        }
     }
 
     /* TODO Make this more efficient while robust! */
@@ -319,7 +327,8 @@ class Simulator(
             Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
             return ebreak
         }
-        return ebreak || breakpoints[inst]
+//        return ebreak || breakpoints[inst]
+        return ebreak || breakpoints.contains(location.toInt())
     }
 
     fun getPC() = state.getPC()
