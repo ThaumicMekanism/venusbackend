@@ -108,11 +108,8 @@ class Simulator(
     }
 
     fun run() {
-        while (!isDone() && (cycles <= settings.maxSteps || settings.maxSteps < 0)) {
+        while (!isDone()) {
             step()
-        }
-        if (settings.maxSteps >= 0 && cycles > settings.maxSteps) {
-            throw SimulatorError("Ran for more than max allowed steps (${settings.maxSteps})!")
         }
     }
 
@@ -121,15 +118,15 @@ class Simulator(
             // We need to step past a breakpoint.
             step()
         }
-        while (!isDone() && !atBreakpoint() && (cycles <= settings.maxSteps || settings.maxSteps < 0)) {
+        while (!isDone() && !atBreakpoint()) {
             step()
-        }
-        if (settings.maxSteps >= 0 && cycles > settings.maxSteps) {
-            throw SimulatorError("Ran for more than max allowed steps (${settings.maxSteps})!")
         }
     }
 
     fun step(): List<Diff> {
+        if (settings.maxSteps >= 0 && cycles >= settings.maxSteps) {
+            throw ExceededAllowedCyclesError("Ran for more than the max allowed steps (${settings.maxSteps})!")
+        }
         this.branched = false
         this.jumped = false
         this.ebreak = false
