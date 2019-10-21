@@ -13,15 +13,6 @@ class FilesHandler(sim: Simulator) {
     fun openFile(sim: Simulator, filename: String, permissions: Int): Int {
         // open file in VFS here
         val o = sim.VFS.getObjectFromPath(filename)
-        val f = if (o == null) {
-            sim.VFS.makeFileInDir(filename) ?: return EOF
-        } else {
-            if (o.type.equals(VFSType.File)) {
-                o as VFSFile
-            } else {
-                return EOF
-            }
-        }
         /*
         0 = r (only can read)
         1 = w (resets file contents and is only writable)
@@ -30,6 +21,7 @@ class FilesHandler(sim: Simulator) {
         4 = w+ (RW reset file contents)
         5 = a+ (RW)
         */
+        var resetText = false
         val rw = when (permissions) {
             0 -> {
                 if (o == null) {
@@ -38,7 +30,7 @@ class FilesHandler(sim: Simulator) {
                 FileMetaData(0, true, false)
             }
             1 -> {
-                f.setText("")
+                resetText = true
                 FileMetaData(0, false, true)
             }
             2 -> {
@@ -51,7 +43,7 @@ class FilesHandler(sim: Simulator) {
                 FileMetaData(0, true, true)
             }
             4 -> {
-                f.setText("")
+                resetText = true
                 FileMetaData(0, true, true)
             }
             5 -> {
@@ -61,6 +53,16 @@ class FilesHandler(sim: Simulator) {
                 return EOF
             }
         }
+        val f = if (o == null) {
+            sim.VFS.makeFileInDir(filename) ?: return EOF
+        } else {
+            if (o.type == VFSType.File) {
+                o as VFSFile
+            } else {
+                return EOF
+            }
+        }
+        f.setText("")
         val fd = FileDescriptor(f, rw)
         files.put(fdCounter, fd)
         return fdCounter++
