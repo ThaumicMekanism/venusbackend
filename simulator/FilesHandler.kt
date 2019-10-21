@@ -62,9 +62,11 @@ class FilesHandler(sim: Simulator) {
                 return EOF
             }
         }
-        f.setText("")
+        if (resetText) {
+            f.setText("")
+        }
         val fd = FileDescriptor(f, rw)
-        files.put(fdCounter, fd)
+        files[fdCounter] = fd
         return fdCounter++
     }
 
