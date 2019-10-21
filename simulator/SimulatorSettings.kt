@@ -8,7 +8,7 @@ data class SimulatorSettings(
     var mutableText: Boolean = true,
     var ecallOnlyExit: Boolean = false,
     var setRegesOnInit: Boolean = true,
-    var maxSteps: Int = 500000,
+    var maxSteps: Int = -1,
     var ASLR: Boolean = false,
     var NX_bit: Boolean = false,
     var allowAccessBtnStackHeap: Boolean = false
