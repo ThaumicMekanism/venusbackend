@@ -48,7 +48,7 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Nu
             "Invalid Instruction"
         }
         var f = format.replace("%output%", this.ecallMsg)
-                    .replace("%inst%", numToBase(base, this.inst.get(InstructionField.ENTIRE), 32, true))
+                    .replace("%inst%", numToBase(base, this.inst.get(InstructionField.ENTIRE), this.inst.length * 8, true))
                     .replace("%pc%", numToBase(base, this.getPC(), 32, false))
                     .replace("%line%", numToBase(base, this.line, 16, false))
                     .replace("%decode%", code)
