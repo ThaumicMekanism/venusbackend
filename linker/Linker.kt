@@ -11,7 +11,7 @@ import venusbackend.riscv.insts.dsl.relocators.Relocator
  * @param label the target label
  * @param offset the byte offset the instruction is at
  */
-data class RelocationInfo(val relocator: Relocator, val offset: Int, val label: String)
+data class RelocationInfo(val relocator: Relocator, val offset: Int, val label: String, val labelOffset: Int)
 
 /**
  * Describes how to relocate data bytes
@@ -19,7 +19,7 @@ data class RelocationInfo(val relocator: Relocator, val offset: Int, val label: 
  * @param offset the byte offset in the data segment
  * @param label the target label
  */
-data class DataRelocationInfo(val offset: Int, val label: String)
+data class DataRelocationInfo(val offset: Int, val label: String, val labelOffset: Int)
 
 /**
  * A singleton which links a list of programs into one program.
@@ -82,34 +82,59 @@ object Linker {
             }
             prog.dataSegment.forEach(linkedProgram.prog::addToData)
 
-            for ((relocator, offset, label) in prog.relocationTable) {
-                val toAddress = prog.labels.get(label)
+            for ((relocator, offset, label, labelOffset) in prog.relocationTable) {
                 val location = textTotalOffset + offset
-                if (toAddress != null) {
-                    /* TODO: fix this for variable length instructions */
-                    val mcode = linkedProgram.prog.insts[location / 4]
-                    relocator(mcode, location, toAddress + textTotalOffset)
+                val mcode = linkedProgram.prog.insts[location / 4]
+                if (label == "") {
+                    relocator(mcode, location, labelOffset)
                 } else {
-                    /* need to relocate globally */
-                    toRelocate.add(RelocationInfo(relocator, location, label))
+                    val toAddress = prog.labels.get(label)
+                    if (toAddress != null) {
+                        /* TODO: fix this for variable length instructions */
+                        relocator(mcode, location, toAddress + labelOffset)
+                    } else {
+                        /* need to relocate globally */
+                        toRelocate.add(RelocationInfo(
+                                relocator, location,
+                                label, labelOffset))
+                    }
                 }
+
+//                val toAddress = prog.labels.get(label)
+//                val location = textTotalOffset + offset
+//                if (toAddress != null) {
+//                    /* TODO: fix this for variable length instructions */
+//                    val mcode = linkedProgram.prog.insts[location / 4]
+//                    relocator(mcode, location, toAddress + textTotalOffset)
+//                } else {
+//                    /* need to relocate globally */
+//                    toRelocate.add(RelocationInfo(relocator, location, label))
+//                }
             }
 
-            for ((offset, label) in prog.dataRelocationTable) {
-                val toAddress = prog.labels.get(label)
+            for ((offset, label, labelOffset) in prog.dataRelocationTable) {
+                val toAddress0 = prog.labels.get(label)
                 val location = dataTotalOffset + offset
-                if (toAddress != null) {
+                if (toAddress0 != null) {
+                    val toAddress = toAddress0 + labelOffset
                     linkedProgram.prog.overwriteData(location, toAddress.toByte())
-                    linkedProgram.prog.overwriteData(location + 1, (toAddress shr 8).toByte())
-                    linkedProgram.prog.overwriteData(location + 2, (toAddress shr 16).toByte())
-                    linkedProgram.prog.overwriteData(location + 3, (toAddress shr 24).toByte())
+                    linkedProgram.prog.overwriteData(
+                            location + 1,
+                            (toAddress shr 8).toByte())
+                    linkedProgram.prog.overwriteData(
+                            location + 2,
+                            (toAddress shr 16).toByte())
+                    linkedProgram.prog.overwriteData(
+                            location + 3,
+                            (toAddress shr 24).toByte())
                 } else {
                     /* need to relocate globally */
-                    toRelocateData.add(DataRelocationInfo(location, label))
+                    toRelocateData.add(DataRelocationInfo(
+                            location, label, labelOffset))
                 }
             }
-
             textTotalOffset += prog.textSize
+            dataTotalOffset += prog.dataSize
             /* These two last lines are an ugly hack to fix the la of an import file generating a fixed offset already. */
             dataTotalOffset += if (prog != progs.last()) {
                 for (i in 0 until prog.textSize) {

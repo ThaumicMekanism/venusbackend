@@ -12,7 +12,7 @@ import venusbackend.simulator.SimulatorError
 /* ktlint-enable no-wildcard-imports */
 
 /**
- * This singleton implements a simple two-pass venusbackend.assembler to transform files into programs.
+ * This singleton implements a simple two-pass assembler to transform files into programs.
  */
 object Assembler {
     /**
@@ -76,9 +76,9 @@ data class PassOneOutput(
 data class AssemblerOutput(val prog: Program, val errors: List<AssemblerError>, val warnings: List<AssemblerWarning>)
 
 /**
- * Pass #1 of our two pass venusbackend.assembler.
+ * Pass #1 of our two pass assembler.
  *
- * It parses labels, expands pseudo-instructions and follows venusbackend.assembler directives.
+ * It parses labels, expands pseudo-instructions and follows assembler directives.
  * It populations [talInstructions], which is then used by [AssemblerPassTwo] in order to actually assemble the code.
  */
 val p1warnings = ArrayList<AssemblerWarning>()
@@ -89,8 +89,8 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     private var currentTextOffset = 0 // MemorySegments.TEXT_BEGIN
     /** The data offset where more data will be written */
     private var currentDataOffset = MemorySegments.STATIC_BEGIN
-    /** The allows user to set custom memory segments until the venusbackend.assembler has used an offset. */
-    private var allow_custom_memory_setments = true
+    /** The allows user to set custom memory segments until the assembler has used an offset. */
+    private var allow_custom_memory_segments = true
     /** Whether or not we are currently in the text segment */
     private var inTextSegment = true
     /** TAL Instructions which will be added to the program */
@@ -137,7 +137,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
 
                 val (labels, args) = Lexer.lexLine(pline)
                 for (label in labels) {
-                    allow_custom_memory_setments = false
+                    allow_custom_memory_segments = false
                     val oldOffset = prog.addLabel(label, offset)
                     if (oldOffset != null) {
                         throw AssemblerError("label $label defined twice")
@@ -149,7 +149,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 if (isAssemblerDirective(args[0])) {
                     parseAssemblerDirective(args[0], args.drop(1), pline)
                 } else {
-                    allow_custom_memory_setments = false
+                    allow_custom_memory_segments = false
                     val expandedInsts = replacePseudoInstructions(args)
                     for (inst in expandedInsts) {
                         val dbg = DebugInfo(currentLineNumber, line, currentTextOffset)
@@ -197,10 +197,10 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     fun getOffset() = if (inTextSegment) currentTextOffset else currentDataOffset
 
     /**
-     * Determines if the given token is an venusbackend.assembler directive
+     * Determines if the given token is an assembler directive
      *
      * @param cmd the token to check
-     * @return true if the token is an venusbackend.assembler directive
+     * @return true if the token is an assembler directive
      * @see parseAssemblerDirective
      */
     private fun isAssemblerDirective(cmd: String) = cmd.startsWith(".")
@@ -277,9 +277,9 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     }
 
     /**
-     * Changes the venusbackend.assembler state in response to directives
+     * Changes the assembler state in response to directives
      *
-     * @param directive the venusbackend.assembler directive, starting with a "."
+     * @param directive the assembler directive, starting with a "."
      * @param args any arguments following the directive
      * @param line the original line (which is needed for some directives)
      */
@@ -291,7 +291,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".register_size" -> {
-                if (!allow_custom_memory_setments) {
+                if (!allow_custom_memory_segments) {
                     throw AssemblerError("""You can only set the register size address BEFORE any labels or
                         |instructions have been processed""".trimMargin())
                 }
@@ -308,7 +308,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".data_start" -> {
-                if (!allow_custom_memory_setments) {
+                if (!allow_custom_memory_segments) {
                     throw AssemblerError("""You can only set the data start address BEFORE any labels or
                         |instructions have been processed""".trimMargin())
                 }
@@ -362,7 +362,10 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                         prog.addToData((word shr 24).toByte())
                     } catch (e: NumberFormatException) {
                         /* arg is not a number; interpret as label */
-                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN)
+                        prog.addDataRelocation(
+                                prog.symbolPart(arg),
+                                prog.labelOffsetPart(arg),
+                                currentDataOffset - MemorySegments.STATIC_BEGIN)
                         prog.addToData(0)
                         prog.addToData(0)
                         prog.addToData(0)
@@ -385,6 +388,19 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 prog.addImport(filepath)
             }
 
+            ".space" -> {
+                checkArgsLength(args, 1)
+                try {
+                    val reps = userStringToInt(args[0])
+                    for (c in 1..reps) {
+                        prog.addToData(0)
+                    }
+                    currentDataOffset += reps
+                } catch (e: NumberFormatException) {
+                    throw AssemblerError("${args[0]} not a valid argument")
+                }
+            }
+
             ".align" -> {
                 checkArgsLength(args, 1)
                 val pow2 = userStringToInt(args[0])
@@ -396,6 +412,14 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 while ((currentDataOffset and mask) != 0) {
                     prog.addToData(0)
                     currentDataOffset++
+                }
+            }
+
+            ".equiv", ".equ", ".set" -> {
+                checkArgsLength(args, 2)
+                val oldDefn = prog.addEqu(args[0], args[1])
+                if (directive == ".equiv" && oldDefn != null) {
+                    throw AssemblerError("attempt to redefine ${args[0]}")
                 }
             }
 
@@ -454,11 +478,13 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     }
 
     fun addRelocation(relocator: Relocator, offset: Int, label: String) =
-            prog.addRelocation(relocator, label, offset)
+            prog.addRelocation(
+                    relocator, prog.symbolPart(label),
+                    prog.labelOffsetPart(label), offset)
 }
 
 /**
- * Pass #2 of our two pass venusbackend.assembler.
+ * Pass #2 of our two pass assembler.
  *
  * It writes TAL instructions to the program, and also adds debug info to the program.
  * @see addInstruction
@@ -469,6 +495,7 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
     fun run(): AssemblerOutput {
+        resolveEquivs(prog)
         for ((dbg, inst) in talInstructions) {
             try {
                 addInstruction(inst, dbg)
@@ -516,6 +543,44 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
         val mcode = inst.format.fill()
         inst.parser(prog, mcode, tokens.drop(1), dbg)
         prog.add(mcode)
+    }
+
+    /** Resolve all labels in PROG defined by .equiv, .equ, or .set and add
+     *  these to PROG as ordinary labels.  Checks for duplicate or
+     *  conflicting definition. */
+    private fun resolveEquivs(prog: Program) {
+        val conflicts = prog.labels.keys.intersect(prog.equivs.keys)
+        if (conflicts.isNotEmpty()) {
+            throw AssemblerError("conflicting definitions for $conflicts")
+        }
+        val processing = HashSet<String>()
+        for (equiv in prog.equivs.keys) {
+            if (equiv !in prog.labels.keys) {
+                prog.labels[equiv] = findDefn(equiv, prog, processing)
+            }
+        }
+    }
+    /** Return the ultimate definition of SYM, an .equ-defined symbol, in
+     *  PROG, assuming that if SYM is in ACTIVE, it is part of a
+     *  circular chain of definitions. */
+    private fun findDefn(sym: String, prog: Program, active: HashSet<String>): Int {
+        // FIXME: Global symbols not defined in this program.
+        if (sym in active) {
+            throw AssemblerError("circularity in definition of $sym")
+        }
+        val value = prog.equivs[sym]!!
+        if (isNumeral(value)) {
+            return userStringToInt(value)
+        } else if (value in prog.labels.keys) {
+            return prog.labels[value]!!
+        } else if (value in prog.equivs.keys) {
+            active.add(sym)
+            val result = findDefn(value, prog, active)
+            active.remove(sym)
+            return result
+        } else {
+            throw AssemblerError("undefined symbol: $value")
+        }
     }
 }
 

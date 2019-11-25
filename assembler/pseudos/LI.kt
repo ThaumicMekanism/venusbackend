@@ -4,6 +4,7 @@ import venusbackend.assembler.AssemblerPassOne
 import venusbackend.assembler.AssemblerError
 import venusbackend.assembler.LineTokens
 import venusbackend.assembler.PseudoWriter
+import venusbackend.riscv.isNumeral
 import venusbackend.riscv.userStringToInt
 
 /**
@@ -14,6 +15,9 @@ import venusbackend.riscv.userStringToInt
 object LI : PseudoWriter() {
     override operator fun invoke(args: LineTokens, state: AssemblerPassOne): List<LineTokens> {
         checkArgsLength(args, 3)
+        if (!isNumeral(args[2])) {
+            return listOf(listOf("addi", args[1], "x0", args[2]))
+        }
         val imm = try {
             userStringToInt(args[2])
         } catch (e: NumberFormatException) {

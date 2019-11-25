@@ -21,7 +21,7 @@ object STypeParser : InstructionParser {
 //            throw AssemblerError("Store takes only one set of parentheses around the last register!")
 //        }
 
-        val imm = getImmediate(args[1], S_TYPE_MIN, S_TYPE_MAX)
+        val imm = prog.getImmediate(args[1], S_TYPE_MIN, S_TYPE_MAX)
         mcode[InstructionField.RS1] = regNameToNumber(args[2])
         mcode[InstructionField.RS2] = regNameToNumber(args[0])
         mcode[InstructionField.IMM_4_0] = imm

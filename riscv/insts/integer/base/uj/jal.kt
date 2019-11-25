@@ -40,7 +40,7 @@ val jal = Instruction(
                 val location: Int = prog.getLabelOffset(label, prog.textSize)!! + prog.textSize // I have to add the textsize since I remove it in the get label offset!
                 JALRelocator.invoke(mcode, prog.textSize, location)
             } else {
-                prog.addRelocation(JALRelocator, label)
+                prog.addRelocation(JALRelocator, label, 0)
             }
         },
         impl16 = NoImplementation,

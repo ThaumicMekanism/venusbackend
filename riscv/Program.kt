@@ -19,6 +19,7 @@ class Program(var name: String = "anonymous") {
     val insts = ArrayList<MachineCode>()
     val debugInfo = ArrayList<DebugInfo>()
     val labels = HashMap<String, Int>()
+    val equivs = HashMap<String, String>()
     val relocationTable = ArrayList<RelocationInfo>()
     val dataRelocationTable = ArrayList<DataRelocationInfo>()
     val dataSegment = ArrayList<Byte>()
@@ -100,6 +101,46 @@ class Program(var name: String = "anonymous") {
     }
 
     /**
+     * Adds a symbol defined by .equiv, .equ, or .set.
+     */
+    fun addEqu(label: String, defn: String) = equivs.put(label, defn)
+    private val SYM_PATN = Regex("""(.*?)(?:([-+])(?:(\d+)|(.*)))?$""")
+    /** Return the symbolic part of LABELARG, where LABELARG may be either
+     *  <symbol>, <symbol>+<decimal numeral>, or <symbol>-<decimal numeral>.
+     */
+    fun symbolPart(labelArg: String): String {
+        val match = SYM_PATN.find(labelArg)
+        if (match == null) {
+            throw AssemblerError("bad symbol reference: $labelArg")
+        }
+        return match.groupValues[1]
+    }
+    /** Return the numeric offset part of LABELARG, where LABELARG may be either
+     *  <symbol> (result 0), <symbol>+<decimal numeral> (result
+     *  <decimal numeral> as an Int), <symbol>-<decimal numeral>,
+     *   <symbol>+<absolute symbol>, or <symbol>-<abssolute symbol>.  Here,
+     *   <absolute symbol> refers to a .equiv'ed symbol that resolves to
+     *   an immediate constant (as in .equiv value, 13).
+     */
+    fun labelOffsetPart(labelArg: String): Int {
+        val match = SYM_PATN.find(labelArg)
+        if (match == null) {
+            throw AssemblerError("ill-formed symbol reference: $labelArg")
+        }
+        val (_, sign, num, offsetSym) = match.destructured
+        if (sign == "") {
+            return 0
+        }
+        if (num != "") {
+            return (sign + num).toInt()
+        }
+        if (offsetSym !in labels) {
+            throw AssemblerError("undefined symbol: $offsetSym")
+        }
+        return if (sign == "-") -labels[offsetSym]!! else labels[offsetSym]!!
+    }
+
+    /**
      * Gets the _relative_ label offset, or null if it does not exist.
      *
      * The _relative_ offset is relative to the instruction currently being assembled.
@@ -124,22 +165,62 @@ class Program(var name: String = "anonymous") {
     }
 
     /**
+     * Gets the immediate from a string, checking if it is in range.
+     *
+     * @param str the immediate as a string
+     * @param min the minimum allowable value of the immediate
+     * @param max the maximum allowable value of the immediate
+     * @return the immediate, as an integer
+     *
+     * @throws IllegalArgumentException if the wrong number of arguments is given
+     */
+    internal fun getImmediate(str: String, min: Int, max: Int): Int {
+        val imm = try {
+            userStringToInt(str)
+        } catch (e: NumberFormatException) {
+            val sym = symbolPart(str)
+            val offsetVal = labelOffsetPart(str)
+            if (sym != "" && sym !in labels) {
+                throw AssemblerError("undefined symbol: $sym")
+            }
+            val symVal = if (sym == "") 0 else labels[sym]!!
+            symVal + offsetVal
+        }
+        if (imm !in min..max)
+            throw AssemblerError("immediate $str (= $imm) out of range (should be between $min and $max)")
+        return imm
+    }
+
+    /**
      * Adds a line to the relocation table.
      *
      * @param label the label to relocate
-     * @param offset the byte offset the label is at (from the start of the program)
+     * @param labelOffset amount to add to the label value before applying
+     *                    relocation
+     * @param offset the byte offset at which to apply the relocation
+     *               (from the start of the program)
      */
-    fun addRelocation(relocator: Relocator, label: String, offset: Int = textSize) =
-            relocationTable.add(RelocationInfo(relocator, offset, label))
+    fun addRelocation(
+        relocator: Relocator,
+        label: String,
+        labelOffset: Int,
+        offset: Int = textSize
+    ) = relocationTable.add(RelocationInfo(relocator, offset, label, labelOffset))
 
     /**
      * Adds a line to the data relocation table.
      *
      * @param label the label to relocate
-     * @param offset the byte offset the label is at (from the start of the data section)
+     * @param labelOffset amount to add to the label value before applying
+     *                    relocation
+     * @param offset the byte offset at which to apply the relocation
+     *               (from the start of the program)
      */
-    fun addDataRelocation(label: String, offset: Int = textSize) =
-            dataRelocationTable.add(DataRelocationInfo(offset, label))
+    fun addDataRelocation(
+        label: String,
+        labelOffset: Int,
+        offset: Int = textSize
+    ) = dataRelocationTable.add(DataRelocationInfo(offset, label, labelOffset))
 
     /**
      * Makes a label global.

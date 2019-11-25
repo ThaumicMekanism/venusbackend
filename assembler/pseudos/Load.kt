@@ -12,8 +12,17 @@ import venusbackend.riscv.insts.dsl.relocators.PCRelLoRelocator
  */
 object Load : PseudoWriter() {
     override operator fun invoke(args: LineTokens, state: AssemblerPassOne): List<LineTokens> {
+        if (args.size == 4) {
+            if (args[3].startsWith('(')) {
+                return listOf(
+                        listOf(
+                                args[0], args[1], args[2],
+                                args[3].substring(1, args[3].length - 1)))
+            } else {
+                return listOf(args)
+            }
+        }
         checkArgsLength(args, 3)
-
         try {
             regNameToNumber(args[2])
             p1warnings.add(AssemblerWarning("You are using the load pseudoinstruction which takes in rd, symbol and the symbol matches a register name."))

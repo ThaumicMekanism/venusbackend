@@ -9,6 +9,8 @@ import venusbackend.riscv.insts.dsl.getImmediate
 import venusbackend.riscv.insts.dsl.parsers.InstructionParser
 import venusbackend.riscv.insts.dsl.parsers.checkArgsLength
 import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
+import venusbackend.riscv.insts.dsl.relocators.ImmAbsRelocator
+import venusbackend.riscv.isNumeral
 
 object ITypeParser : InstructionParser {
     const val I_TYPE_MIN = -2048
@@ -24,6 +26,13 @@ object ITypeParser : InstructionParser {
 
         mcode[InstructionField.RD] = regNameToNumber(args[0])
         mcode[InstructionField.RS1] = regNameToNumber(args[1])
-        mcode[InstructionField.IMM_11_0] = getImmediate(args[2], I_TYPE_MIN, I_TYPE_MAX)
+        if (isNumeral(args[2])) {
+            mcode[InstructionField.IMM_11_0] =
+                    prog.getImmediate(args[2], I_TYPE_MIN, I_TYPE_MAX)
+        } else {
+            prog.addRelocation(
+                    ImmAbsRelocator, prog.symbolPart(args[2]),
+                    prog.labelOffsetPart(args[2]))
+        }
     }
 }

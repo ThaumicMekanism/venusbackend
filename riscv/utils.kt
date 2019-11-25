@@ -82,6 +82,15 @@ fun unescapeString(s: String) =
                 .replace("\\\"", "\"")
                 .replace("\\'", "'")
 
+fun isNumeral(s: String): Boolean {
+    try {
+        userStringToInt(s)
+        return true
+    } catch (e: NumberFormatException) {
+        return false
+    }
+}
+
 private fun isCharacterLiteral(s: String) =
         s.first() == '\'' && s.last() == '\''
 
