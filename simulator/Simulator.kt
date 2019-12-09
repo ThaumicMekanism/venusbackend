@@ -79,10 +79,10 @@ class Simulator(
     }
 
     fun isDone(): Boolean {
-        return getPC() >= if (settings.ecallOnlyExit) {
-            MemorySegments.STATIC_BEGIN
+        return if (settings.ecallOnlyExit) {
+            this.exitcode != null
         } else {
-            state.getMaxPC()
+            getPC() >= state.getMaxPC()
         }
     }
 
@@ -321,7 +321,7 @@ class Simulator(
         val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
         val inst = invInstOrderMapping[location.toInt()]
         if (inst == null) {
-            Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
+//            Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
             return ebreak
         }
 //        return ebreak || breakpoints[inst]

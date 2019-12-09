@@ -6,7 +6,6 @@ import venusbackend.inc
 import venusbackend.numbers.QuadWord
 import venusbackend.numbers.toQuadWord
 import venusbackend.riscv.InstructionField
-import venusbackend.riscv.MemorySegments
 import venusbackend.riscv.Registers
 import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.dsl.disasms.RawDisassembler
@@ -274,7 +273,7 @@ private fun sbrk(sim: Simulator) {
 }
 
 private fun exit(sim: Simulator) {
-    sim.setPC(MemorySegments.STATIC_BEGIN)
+//    sim.setPC(MemorySegments.STATIC_BEGIN)
     sim.exitcode = 0
     // sim.ecallMsg = "exiting the simulator"
 }
@@ -286,7 +285,7 @@ private fun printChar(sim: Simulator) {
 }
 
 private fun exitWithCode(sim: Simulator) {
-    sim.setPC(MemorySegments.STATIC_BEGIN)
+//    sim.setPC(MemorySegments.STATIC_BEGIN)
     val retVal = sim.getReg(11)
     sim.exitcode = retVal.toInt()
     sim.ecallMsg = "\nExited with error code $retVal"
