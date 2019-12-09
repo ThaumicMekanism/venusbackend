@@ -493,10 +493,10 @@ class Simulator(
                 val adjAddr = ((addr / MemSize.WORD.size) * MemSize.WORD.size)
                 val lowerAddr = adjAddr - MemorySegments.TEXT_BEGIN
                 var newInst = this.state.mem.loadWord(adjAddr)
-                preInstruction.add(Renderer.updateProgramListing(lowerAddr / MemSize.WORD.size, newInst))
+                preInstruction.add(Renderer.updateProgramListing(lowerAddr, newInst))
                 if ((lowerAddr + MemorySegments.TEXT_BEGIN) != addr && (lowerAddr + MemSize.WORD.size - MemSize.BYTE.size) < state.getMaxPC()) {
-                    newInst = this.state.mem.loadWord(adjAddr + MemSize.WORD.size)
-                    preInstruction.add(Renderer.updateProgramListing((lowerAddr / MemSize.WORD.size) + 1, newInst))
+                    var newInst2 = this.state.mem.loadWord(adjAddr + MemSize.WORD.size)
+                    preInstruction.add(Renderer.updateProgramListing((lowerAddr) + 4, newInst2))
                 }
             } catch (e: Throwable) { /*This is to not error the tests.*/ }
         }
