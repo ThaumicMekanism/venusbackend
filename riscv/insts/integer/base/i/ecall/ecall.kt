@@ -14,6 +14,7 @@ import venusbackend.riscv.insts.dsl.formats.InstructionFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
 import venusbackend.riscv.insts.dsl.impls.RawImplementation
 import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
+import venusbackend.riscv.MemorySegments
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
 
@@ -273,7 +274,7 @@ private fun sbrk(sim: Simulator) {
 }
 
 private fun exit(sim: Simulator) {
-//    sim.setPC(MemorySegments.STATIC_BEGIN)
+    sim.setPC(MemorySegments.STATIC_BEGIN)
     sim.exitcode = 0
     // sim.ecallMsg = "exiting the simulator"
 }
@@ -285,7 +286,7 @@ private fun printChar(sim: Simulator) {
 }
 
 private fun exitWithCode(sim: Simulator) {
-//    sim.setPC(MemorySegments.STATIC_BEGIN)
+    sim.setPC(MemorySegments.STATIC_BEGIN)
     val retVal = sim.getReg(11)
     sim.exitcode = retVal.toInt()
     sim.ecallMsg = "\nExited with error code $retVal"
