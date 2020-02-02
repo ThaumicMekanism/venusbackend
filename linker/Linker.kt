@@ -91,7 +91,7 @@ object Linker {
                     val toAddress = prog.labels.get(label)
                     if (toAddress != null) {
                         /* TODO: fix this for variable length instructions */
-                        relocator(mcode, location, toAddress + labelOffset)
+                        relocator(mcode, location, toAddress + labelOffset + textTotalOffset)
                     } else {
                         /* need to relocate globally */
                         toRelocate.add(RelocationInfo(
