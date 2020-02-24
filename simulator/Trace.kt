@@ -54,6 +54,7 @@ class Trace(branched: Boolean, jumped: Boolean, ecallMsg: String, regs: Array<Nu
                     .replace("%decode%", code)
         for (i in 0..(regs.size - 1)) {
             f = f.replace("%" + i.toString() + "%", numToBase(base, this.regs[i].toInt(), 32, true))
+            f = f.replace("%x" + i.toString() + "%", numToBase(base, this.regs[i].toInt(), 32, true))
         }
         return f
     }
