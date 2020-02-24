@@ -352,6 +352,25 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 currentDataOffset++
             }
 
+            ".half" -> {
+                for (arg in args) {
+                    try {
+                        val word = userStringToInt(arg)
+                        prog.addToData(word.toByte())
+                        prog.addToData((word shr 8).toByte())
+                    } catch (e: NumberFormatException) {
+                        /* arg is not a number; interpret as label */
+                        prog.addDataRelocation(
+                                prog.symbolPart(arg),
+                                prog.labelOffsetPart(arg),
+                                currentDataOffset - MemorySegments.STATIC_BEGIN)
+                        prog.addToData(0)
+                        prog.addToData(0)
+                    }
+                    currentDataOffset += 2
+                }
+            }
+
             ".word" -> {
                 for (arg in args) {
                     try {
