@@ -23,9 +23,9 @@ object Assembler {
      * @see venus.linker.Linker
      * @see venus.simulator.Simulator
      */
-    fun assemble(text: String, name: String = "main.S"): AssemblerOutput {
+    fun assemble(text: String, name: String = "main.S", abspath: String = ""): AssemblerOutput {
         InitInstructions() // This is due to how some method of compilation handle all of the code.
-        var (passOneProg, talInstructions, passOneErrors, warnings) = AssemblerPassOne(text.replace("\r", ""), name).run()
+        var (passOneProg, talInstructions, passOneErrors, warnings) = AssemblerPassOne(text.replace("\r", ""), name, abspath).run()
 
         /* This will force pc to be word aligned. Removed it because I guess you could custom it.
         if (passOneProg.insts.size > 0) {
@@ -44,7 +44,7 @@ object Assembler {
             try {
                 MemorySegments.setTextBegin(MemorySegments.STATIC_BEGIN - passOneProg.textSize)
                 Renderer.updateText()
-                val pone = AssemblerPassOne(text).run()
+                val pone = AssemblerPassOne(text, name, abspath).run()
                 passOneProg = pone.prog
                 passOneErrors = pone.errors
                 talInstructions = pone.talInstructions
@@ -82,9 +82,9 @@ data class AssemblerOutput(val prog: Program, val errors: List<AssemblerError>, 
  * It populations [talInstructions], which is then used by [AssemblerPassTwo] in order to actually assemble the code.
  */
 val p1warnings = ArrayList<AssemblerWarning>()
-internal class AssemblerPassOne(private val text: String, name: String = "anonymous") {
+internal class AssemblerPassOne(private val text: String, name: String = "anonymous", abspath: String) {
     /** The program we are currently assembling */
-    private val prog = Program(name)
+    private val prog = Program(name, abspath)
     /** The text offset where the next instruction will be written */
     private var currentTextOffset = 0 // MemorySegments.TEXT_BEGIN
     /** The data offset where more data will be written */
@@ -404,10 +404,11 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             ".import" -> {
                 checkArgsLength(args, 1, dbg)
                 var filepath = args[0]
-                if (filepath.matches(Regex("\".*\"|'.*'"))) {
+                val relative = !filepath.startsWith("<")
+                if (filepath.matches(Regex("\".*\"|'.*'|<.*>"))) {
                     filepath = filepath.slice(1..(filepath.length - 2))
                 }
-                prog.addImport(filepath)
+                prog.addImport(filepath, relative)
             }
 
             ".space" -> {
@@ -542,7 +543,7 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
                         continue
                     }
                     try {
-                        pw(inst, AssemblerPassOne(""), dbg)
+                        pw(inst, AssemblerPassOne("", abspath = ""), dbg)
                         errors.add(AssemblerError(lineNumber, e))
                     } catch (pe: Throwable) {
                         errors.add(AssemblerError(lineNumber, pe))

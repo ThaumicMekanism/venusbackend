@@ -6,6 +6,8 @@ import venusbackend.linker.DataRelocationInfo
 import venusbackend.linker.RelocationInfo
 import venusbackend.riscv.insts.dsl.relocators.Relocator
 
+data class Import(val path: String, val relative: Boolean)
+
 /**
  * An (unlinked) program.
  *
@@ -14,7 +16,7 @@ import venusbackend.riscv.insts.dsl.relocators.Relocator
  * @see venus.linker.Linker
  */
 public val venusInternalLabels: String = "Venus_Internal_Label-"
-class Program(var name: String = "anonymous") {
+class Program(var name: String = "anonymous", val absPath: String) {
     /* TODO: abstract away these variables */
     val insts = ArrayList<MachineCode>()
     val debugInfo = ArrayList<DebugInfo>()
@@ -27,7 +29,7 @@ class Program(var name: String = "anonymous") {
     var textSize = 0
     var dataSize = 0
     private val globalLabels = HashSet<String>()
-    val imports = ArrayList<String>()
+    val imports = ArrayList<Import>()
 
     /**
      * Adds an instruction to the program, and increments the text size.
@@ -59,8 +61,8 @@ class Program(var name: String = "anonymous") {
         dataSegment[offset] = byte
     }
 
-    fun addImport(filepath: String) {
-        this.imports.add(filepath)
+    fun addImport(filepath: String, relative: Boolean) {
+        this.imports.add(Import(filepath, relative))
     }
 
     /**

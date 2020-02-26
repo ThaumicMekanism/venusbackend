@@ -1,6 +1,9 @@
 package venusbackend.linker
 
+import venusbackend.riscv.Import
+
 data class ImportProgramData(
-    val progPath: String,
-    val importingProgram: String
+    val progImport: Import,
+    val importingProgram: Import,
+    val importingProgramAbsPath: String
 )

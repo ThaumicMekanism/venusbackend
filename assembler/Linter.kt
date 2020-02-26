@@ -16,7 +16,7 @@ object Linter {
      * @fixme this relies on Kotlin using JS array for Array, but it will probably remain that way
      */
     fun lint(text: String): Array<LintError> {
-        val (_, errors, warnings) = Assembler.assemble(text)
+        val (_, errors, warnings) = Assembler.assemble(text, abspath = "")
         val linterErrors = ArrayList<LintError>()
         for (error in errors) {
             linterErrors.add(LintError(error.line ?: -1, error.message ?: ""))
