@@ -148,8 +148,7 @@ class Simulator(
                 throw e
             }
             Renderer.displayError("\n[ERROR]: Could not decode the instruction (0x" + mcode.toString(16) + ") at pc='" + getPC() + "'!\n" +
-                    "Please make sure that you are not jumping to the middle of an instruction!\n" +
-                    "Here is a dump of the rest of the information:\n")
+                    "Please make sure that you are not jumping to the middle of an instruction!\n")
             throw e
         }
         history.add(preInstruction)
