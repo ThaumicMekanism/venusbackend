@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.dsl.types
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.insts.InstructionNotFoundError
 import venusbackend.riscv.insts.dsl.disasms.InstructionDisassembler
@@ -27,9 +28,9 @@ open class Instruction(
                         .firstOrNull { it.format.matches(mcode) }
                         ?: throw SimulatorError("instruction not found for 0x" + mcode.toString(16), InstructionNotFoundError())
 
-        operator fun get(name: String) =
+        operator fun get(name: String, dbg: DebugInfo?) =
                 allInstructions.firstOrNull { it.name == name }
-                        ?: throw AssemblerError("instruction with name $name not found", InstructionNotFoundError())
+                        ?: throw AssemblerError("instruction with name $name not found", InstructionNotFoundError(), dbg)
     }
 
     init {

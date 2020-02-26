@@ -1,6 +1,7 @@
 package venusbackend.linker
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.MemorySegments
 import venusbackend.riscv.insts.dsl.relocators.Relocator
 
@@ -11,7 +12,7 @@ import venusbackend.riscv.insts.dsl.relocators.Relocator
  * @param label the target label
  * @param offset the byte offset the instruction is at
  */
-data class RelocationInfo(val relocator: Relocator, val offset: Int, val label: String, val labelOffset: Int)
+data class RelocationInfo(val relocator: Relocator, val offset: Int, val label: String, val labelOffset: Int, val dbg: DebugInfo)
 
 /**
  * Describes how to relocate data bytes
@@ -19,7 +20,7 @@ data class RelocationInfo(val relocator: Relocator, val offset: Int, val label: 
  * @param offset the byte offset in the data segment
  * @param label the target label
  */
-data class DataRelocationInfo(val offset: Int, val label: String, val labelOffset: Int)
+data class DataRelocationInfo(val offset: Int, val label: String, val labelOffset: Int, val dbg: DebugInfo)
 
 /**
  * A singleton which links a list of programs into one program.
@@ -82,21 +83,21 @@ object Linker {
             }
             prog.dataSegment.forEach(linkedProgram.prog::addToData)
 
-            for ((relocator, offset, label, labelOffset) in prog.relocationTable) {
+            for ((relocator, offset, label, labelOffset, dbg) in prog.relocationTable) {
                 val location = textTotalOffset + offset
                 val mcode = linkedProgram.prog.insts[location / 4]
                 if (label == "") {
-                    relocator(mcode, location, labelOffset)
+                    relocator(mcode, location, labelOffset, dbg = dbg)
                 } else {
                     val toAddress = prog.labels.get(label)
                     if (toAddress != null) {
                         /* TODO: fix this for variable length instructions */
-                        relocator(mcode, location, toAddress + labelOffset + textTotalOffset)
+                        relocator(mcode, location, toAddress + labelOffset + textTotalOffset, dbg = dbg)
                     } else {
                         /* need to relocate globally */
                         toRelocate.add(RelocationInfo(
                                 relocator, location,
-                                label, labelOffset))
+                                label, labelOffset, dbg))
                     }
                 }
 
@@ -112,7 +113,7 @@ object Linker {
 //                }
             }
 
-            for ((offset, label, labelOffset) in prog.dataRelocationTable) {
+            for ((offset, label, labelOffset, dbg) in prog.dataRelocationTable) {
                 val toAddress0 = prog.labels.get(label)
                 val location = dataTotalOffset + offset
                 if (toAddress0 != null) {
@@ -130,7 +131,7 @@ object Linker {
                 } else {
                     /* need to relocate globally */
                     toRelocateData.add(DataRelocationInfo(
-                            location, label, labelOffset))
+                            location, label, labelOffset, dbg))
                 }
             }
             textTotalOffset += prog.textSize
@@ -146,16 +147,16 @@ object Linker {
             }
         }
 
-        for ((relocator, offset, label) in toRelocate) {
+        for ((relocator, offset, label, labelOffset, dbg) in toRelocate) {
             val toAddress = globalTable.get(label)
-                    ?: throw AssemblerError("label $label used but not defined")
+                    ?: throw AssemblerError("label $label used but not defined", dbg)
 
             val mcode = linkedProgram.prog.insts[offset / 4]
-            relocator(mcode, offset, toAddress)
+            relocator(mcode, offset, toAddress, dbg = dbg)
         }
 
-        for ((location, label) in toRelocateData) {
-            val toAddress = globalTable.get(label) ?: throw AssemblerError("label $label used but not defined")
+        for ((location, label, labelOffset, dbg) in toRelocateData) {
+            val toAddress = globalTable.get(label) ?: throw AssemblerError("label $label used but not defined", dbg)
             linkedProgram.prog.overwriteData(location, toAddress.toByte())
             linkedProgram.prog.overwriteData(location + 1, (toAddress shr 8).toByte())
             linkedProgram.prog.overwriteData(location + 2, (toAddress shr 16).toByte())

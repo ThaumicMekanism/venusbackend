@@ -14,13 +14,13 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
  */
 object CATypeParser : InstructionParser {
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 2)
+        checkArgsLength(args.size, 2, dbg)
 
-        val rdp = regNameToNumber(args[0])
-        val rs2p = regNameToNumber(args[1])
+        val rdp = regNameToNumber(args[0], dbg = dbg)
+        val rs2p = regNameToNumber(args[1], dbg = dbg)
 
         if (rdp !in 8..15 || rs2p !in 8..15) {
-            throw AssemblerError("CA instructions only takes registers x8 to x15!")
+            throw AssemblerError("CA instructions only takes registers x8 to x15!", dbg)
         }
 
         mcode[InstructionField.RDP] = rdp

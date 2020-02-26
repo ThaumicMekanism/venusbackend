@@ -23,7 +23,7 @@ object Assembler {
      * @see venus.linker.Linker
      * @see venus.simulator.Simulator
      */
-    fun assemble(text: String, name: String = "anonymous"): AssemblerOutput {
+    fun assemble(text: String, name: String = "main.S"): AssemblerOutput {
         InitInstructions() // This is due to how some method of compilation handle all of the code.
         var (passOneProg, talInstructions, passOneErrors, warnings) = AssemblerPassOne(text.replace("\r", ""), name).run()
 
@@ -65,7 +65,7 @@ object Assembler {
     }
 }
 
-data class DebugInfo(val lineNo: Int, val line: String, val address: Int)
+data class DebugInfo(val lineNo: Int, val line: String, val address: Int, val prog: Program)
 data class DebugInstruction(val debug: DebugInfo, val LineTokens: List<String>)
 data class PassOneOutput(
     val prog: Program,
@@ -112,6 +112,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
         for (line in text.lines()) {
             try {
                 currentLineNumber++
+                val dbg = DebugInfo(currentLineNumber, line, currentTextOffset, prog)
 
                 val offset = getOffset()
 
@@ -133,28 +134,28 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     }
                 }
 
-                preprocess(line)
+                preprocess(line, dbg)
 
-                val (labels, args) = Lexer.lexLine(pline)
+                val (labels, args) = Lexer.lexLine(pline, dbg)
                 for (label in labels) {
                     allow_custom_memory_segments = false
                     val oldOffset = prog.addLabel(label, offset)
                     if (oldOffset != null) {
-                        throw AssemblerError("label $label defined twice")
+                        throw AssemblerError("label $label defined twice", dbg)
                     }
                 }
 
                 if (args.isEmpty() || args[0].isEmpty()) continue // empty line
 
                 if (isAssemblerDirective(args[0])) {
-                    parseAssemblerDirective(args[0], args.drop(1), pline)
+                    parseAssemblerDirective(args[0], args.drop(1), pline, dbg)
                 } else {
                     allow_custom_memory_segments = false
-                    val expandedInsts = replacePseudoInstructions(args)
+                    val expandedInsts = replacePseudoInstructions(args, dbg)
                     for (inst in expandedInsts) {
-                        val dbg = DebugInfo(currentLineNumber, line, currentTextOffset)
+//                        val dbg = DebugInfo(currentLineNumber, line, currentTextOffset, prog)
                         val instsize = try {
-                            Instruction[getInstruction(inst)].format.length
+                            Instruction[getInstruction(inst), dbg].format.length
                         } catch (e: AssemblerError) {
                             4
                         }
@@ -173,7 +174,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
         }
     }
 
-    private fun preprocess(line: String) {
+    private fun preprocess(line: String, dbg: DebugInfo) {
         val DIRECTIVE_DEFINE = "define"
         val DIRECTIVE_UNDEF = "undef"
         var pline = line.trim()
@@ -187,7 +188,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             if (pline.startsWith(DIRECTIVE_UNDEF)) {
                 pline = pline.removePrefix(DIRECTIVE_UNDEF).trim()
                 val tokens = pline.split(" ")
-                checkArgsLength(tokens, 1)
+                checkArgsLength(tokens, 1, dbg)
                 defines.remove(tokens[0])
             }
         }
@@ -211,22 +212,22 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
      * @param tokens a list of strings corresponding to the space delimited line
      * @return the corresponding TAL instructions (possibly unchanged)
      */
-    private fun replacePseudoInstructions(tokens: LineTokens): List<LineTokens> {
+    private fun replacePseudoInstructions(tokens: LineTokens, dbg: DebugInfo): List<LineTokens> {
         try {
             val cmd = getInstruction(tokens)
             // This is meant to allow for cmds with periods since the pseudodispatcher does not allow for special chars.
             val cleanedCMD = cmd.replace(".", "")
             val pw = PseudoDispatcher.valueOf(cleanedCMD).pw
-            return pw(tokens, this)
+            return pw(tokens, this, dbg)
         } catch (t: Throwable) {
             /* TODO: don't use throwable here */
             /* not a pseudoinstruction, or expansion failure */
-            val linetokens = parsePossibleMachineCode(tokens)
+            val linetokens = parsePossibleMachineCode(tokens, dbg)
             return linetokens
         }
     }
 
-    private fun parsePossibleMachineCode(tokens: LineTokens): List<LineTokens> {
+    private fun parsePossibleMachineCode(tokens: LineTokens, dbg: DebugInfo): List<LineTokens> {
         val c = getInstruction(tokens)
         if (c in listOf("beq", "bge", "bgeu", "blt", "bltu", "bne")) {
             try {
@@ -251,16 +252,16 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 var cmd = userStringToInt(c)
                 try {
                     val decoded = Instruction[MachineCode(cmd)].disasm(MachineCode(cmd))
-                    val lex = Lexer.lexLine(decoded).second.toMutableList()
+                    val lex = Lexer.lexLine(decoded, dbg).second.toMutableList()
                     if (lex[0] == "jal") {
                         val loc = getOffset() + lex[2].toInt()
-                        prog.addLabel("L" + loc.toString(), loc)
-                        lex[2] = "L" + loc.toString()
+                        prog.addLabel("L$loc", loc)
+                        lex[2] = "L$loc"
                     }
                     if (lex[0] in listOf("beq", "bge", "bgeu", "blt", "bltu", "bne")) {
                         val loc = getOffset() + lex[3].toInt()
-                        prog.addLabel("L" + loc.toString(), loc)
-                        lex[3] = "L" + loc.toString()
+                        prog.addLabel("L$loc", loc)
+                        lex[3] = "L$loc"
                     }
                     val t = listOf(lex)
                     return t
@@ -283,7 +284,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
      * @param args any arguments following the directive
      * @param line the original line (which is needed for some directives)
      */
-    private fun parseAssemblerDirective(directive: String, args: LineTokens, line: String) {
+    private fun parseAssemblerDirective(directive: String, args: LineTokens, line: String, dbg: DebugInfo) {
         when (directive) {
             ".data" -> inTextSegment = false
             ".text" -> {
@@ -293,16 +294,16 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             ".register_size" -> {
                 if (!allow_custom_memory_segments) {
                     throw AssemblerError("""You can only set the register size address BEFORE any labels or
-                        |instructions have been processed""".trimMargin())
+                        |instructions have been processed""".trimMargin(), dbg)
                 }
                 try {
-                    checkArgsLength(args, 1)
+                    checkArgsLength(args, 1, dbg)
                 } catch (e: AssemblerError) {
-                    throw AssemblerError("$directive takes in zero or one argument(s) to specify encoding!")
+                    throw AssemblerError("$directive takes in zero or one argument(s) to specify encoding!", dbg)
                 }
                 val instwidth = userStringToInt(args[0])
                 if (!listOf(16, 32, 64, 128).contains(instwidth)) {
-                    throw AssemblerError("Unknown instruction size!")
+                    throw AssemblerError("Unknown instruction size!", dbg)
                 }
                 Renderer.displayWarning("Will set width to $instwidth!")
             }
@@ -310,9 +311,9 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             ".data_start" -> {
                 if (!allow_custom_memory_segments) {
                     throw AssemblerError("""You can only set the data start address BEFORE any labels or
-                        |instructions have been processed""".trimMargin())
+                        |instructions have been processed""".trimMargin(), dbg)
                 }
-                checkArgsLength(args, 1)
+                checkArgsLength(args, 1, dbg)
                 val location = userStringToInt(args[0])
                 MemorySegments.STATIC_BEGIN = location
             }
@@ -321,7 +322,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 for (arg in args) {
                     val byte = userStringToInt(arg)
                     if (byte !in -127..255) {
-                        throw AssemblerError("invalid byte $byte too big")
+                        throw AssemblerError("invalid byte $byte too big", dbg)
                     }
                     prog.addToData(byte.toByte())
                     currentDataOffset++
@@ -329,7 +330,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".string", ".asciiz" -> {
-                checkArgsLength(args, 1)
+                checkArgsLength(args, 1, dbg)
                 val ascii: String = try {
                     val str = args[0]
                     if (str.length < 2 || str[0] != str[str.length - 1] || str[0] != '"') {
@@ -337,11 +338,11 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     }
                     unescapeString(str.drop(1).dropLast(1))
                 } catch (e: Throwable) {
-                    throw AssemblerError("couldn't parse ${args[0]} as a string")
+                    throw AssemblerError("couldn't parse ${args[0]} as a string", dbg)
                 }
                 for (c in ascii) {
                     if (c.toInt() !in 0..127) {
-                        throw AssemblerError("unexpected non-ascii character: $c")
+                        throw AssemblerError("unexpected non-ascii character: '$c'", dbg)
                     }
                     prog.addToData(c.toByte())
                     currentDataOffset++
@@ -361,9 +362,10 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     } catch (e: NumberFormatException) {
                         /* arg is not a number; interpret as label */
                         prog.addDataRelocation(
-                                prog.symbolPart(arg),
-                                prog.labelOffsetPart(arg),
-                                currentDataOffset - MemorySegments.STATIC_BEGIN)
+                                prog.symbolPart(arg, dbg),
+                                prog.labelOffsetPart(arg, dbg),
+                                currentDataOffset - MemorySegments.STATIC_BEGIN,
+                                dbg)
                         prog.addToData(0)
                         prog.addToData(0)
                     }
@@ -382,9 +384,10 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     } catch (e: NumberFormatException) {
                         /* arg is not a number; interpret as label */
                         prog.addDataRelocation(
-                                prog.symbolPart(arg),
-                                prog.labelOffsetPart(arg),
-                                currentDataOffset - MemorySegments.STATIC_BEGIN)
+                                prog.symbolPart(arg, dbg),
+                                prog.labelOffsetPart(arg, dbg),
+                                currentDataOffset - MemorySegments.STATIC_BEGIN,
+                                dbg)
                         prog.addToData(0)
                         prog.addToData(0)
                         prog.addToData(0)
@@ -399,7 +402,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".import" -> {
-                checkArgsLength(args, 1)
+                checkArgsLength(args, 1, dbg)
                 var filepath = args[0]
                 if (filepath.matches(Regex("\".*\"|'.*'"))) {
                     filepath = filepath.slice(1..(filepath.length - 2))
@@ -408,7 +411,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".space" -> {
-                checkArgsLength(args, 1)
+                checkArgsLength(args, 1, dbg)
                 try {
                     val reps = userStringToInt(args[0])
                     for (c in 1..reps) {
@@ -416,15 +419,15 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                     }
                     currentDataOffset += reps
                 } catch (e: NumberFormatException) {
-                    throw AssemblerError("${args[0]} not a valid argument")
+                    throw AssemblerError("${args[0]} not a valid argument", dbg)
                 }
             }
 
             ".align" -> {
-                checkArgsLength(args, 1)
+                checkArgsLength(args, 1, dbg)
                 val pow2 = userStringToInt(args[0])
                 if (pow2 < 0 || pow2 > 8) {
-                    throw AssemblerError(".align argument must be between 0 and 8, inclusive")
+                    throw AssemblerError(".align argument must be between 0 and 8, inclusive", dbg)
                 }
                 val mask = (1 shl pow2) - 1 // Sets pow2 rightmost bits to 1
                 /* Add padding until data offset aligns with given power of 2 */
@@ -435,10 +438,10 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             }
 
             ".equiv", ".equ", ".set" -> {
-                checkArgsLength(args, 2)
+                checkArgsLength(args, 2, dbg)
                 val oldDefn = prog.addEqu(args[0], args[1])
                 if (directive == ".equiv" && oldDefn != null) {
-                    throw AssemblerError("attempt to redefine ${args[0]}")
+                    throw AssemblerError("attempt to redefine ${args[0]}", dbg)
                 }
             }
 
@@ -453,7 +456,8 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                         prog.addToData((bits shr 24).toByte())
                     } catch (e: NumberFormatException) {
                         /* arg is not a number; interpret as label */
-                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN)
+                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN,
+                                dbg = dbg)
                         prog.addToData(0)
                         prog.addToData(0)
                         prog.addToData(0)
@@ -478,7 +482,8 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                         prog.addToData((bits shr 56).toByte())
                     } catch (e: NumberFormatException) {
                         /* arg is not a number; interpret as label */
-                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN)
+                        prog.addDataRelocation(arg, currentDataOffset - MemorySegments.STATIC_BEGIN,
+                                dbg = dbg)
                         prog.addToData(0)
                         prog.addToData(0)
                         prog.addToData(0)
@@ -492,14 +497,14 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 }
             }
 
-            else -> throw AssemblerError("unknown assembler directive $directive")
+            else -> throw AssemblerError("unknown assembler directive $directive", dbg)
         }
     }
 
-    fun addRelocation(relocator: Relocator, offset: Int, label: String) =
+    fun addRelocation(relocator: Relocator, offset: Int, label: String, dbg: DebugInfo) =
             prog.addRelocation(
-                    relocator, prog.symbolPart(label),
-                    prog.labelOffsetPart(label), offset)
+                    relocator, prog.symbolPart(label, dbg),
+                    prog.labelOffsetPart(label, dbg), offset, dbg)
 }
 
 /**
@@ -537,7 +542,7 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
                         continue
                     }
                     try {
-                        pw(inst, AssemblerPassOne(""))
+                        pw(inst, AssemblerPassOne(""), dbg)
                         errors.add(AssemblerError(lineNumber, e))
                     } catch (pe: Throwable) {
                         errors.add(AssemblerError(lineNumber, pe))
@@ -558,7 +563,7 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
     private fun addInstruction(tokens: LineTokens, dbg: DebugInfo) {
         if (tokens.isEmpty() || tokens[0].isEmpty()) return
         val cmd = getInstruction(tokens)
-        val inst = Instruction[cmd]
+        val inst = Instruction[cmd, dbg]
         val mcode = inst.format.fill()
         inst.parser(prog, mcode, tokens.drop(1), dbg)
         prog.add(mcode)

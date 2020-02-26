@@ -6,6 +6,7 @@ import venus.vfs.VFSFile
 import venus.vfs.VFSProgram
 import venus.vfs.VFSType
 import venus.vfs.VirtualFileSystem
+import venusbackend.assembler.Assembler
 import venusbackend.riscv.Program
 
 class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
@@ -39,9 +40,15 @@ class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
                 VFSType.File -> {
                     // Get the text
                     val progText = (obj as VFSFile).readText()
-                    val p = assemble(progText) ?: throw AssemblerError("Could not load the library: $progname (Note: The library file was found but it could not be assembled) This library was imported by ${progData.importingProgram}.")
-                    p.name = progname
-                    p
+                    val (prog, errors, warnings) = Assembler.assemble(progText, progname)
+                    if (errors.isNotEmpty()) {
+                        var msgs = "Could not load the library: $progname (Note: The library file was found but it could not be assembled) This library was imported by ${progData.importingProgram}. Here are a list of errors which may help:\n\n"
+                        for (error in errors) {
+                            msgs += "${error.message}\n\n"
+                        }
+                        throw AssemblerError(msgs)
+                    }
+                    prog
                 }
                 VFSType.Program -> {
                     (obj as VFSProgram).getProgram()

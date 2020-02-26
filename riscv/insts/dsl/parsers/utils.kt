@@ -1,10 +1,11 @@
 package venusbackend.riscv.insts.dsl.parsers
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 
-internal fun checkArgsLength(argsSize: Int, required: Int) {
+internal fun checkArgsLength(argsSize: Int, required: Int, dbg: DebugInfo) {
     if (argsSize != required)
-        throw AssemblerError("got $argsSize arguments but expected $required")
+        throw AssemblerError("got $argsSize arguments but expected $required", dbg)
 }
 
 /**
@@ -17,41 +18,41 @@ internal fun checkArgsLength(argsSize: Int, required: Int) {
  *
  * @throws AssemblerError if given an invalid register
  */
-internal fun regNameToNumber(reg: String, integer: Boolean = true): Int {
+internal fun regNameToNumber(reg: String, integer: Boolean = true, dbg: DebugInfo): Int {
     if (reg.startsWith("x")) {
         val ret = reg.drop(1).toInt()
         if (ret in 0..31) {
-            if (!integer) throw AssemblerError("Register $reg is not a floating point register")
+            if (!integer) throw AssemblerError("Register $reg is not a floating point register", dbg)
             return ret
         }
-        throw AssemblerError("register $reg not recognized")
+        throw AssemblerError("register $reg not recognized", dbg)
     }
     if (reg.matches(Regex("f\\d{1,2}"))) {
         val ret = reg.drop(1).toInt()
         if (ret in 0..31) {
-            if (integer) throw AssemblerError("Register $reg is not an integer register")
+            if (integer) throw AssemblerError("Register $reg is not an integer register", dbg)
             return ret
         }
-        throw AssemblerError("register $reg not recognized")
+        throw AssemblerError("register $reg not recognized", dbg)
     }
     try {
         if (integer) {
-            return checkInteger(reg)
+            return checkInteger(reg, dbg)
         } else {
-            return checkFloating(reg)
+            return checkFloating(reg, dbg)
         }
     } catch (e: AssemblerError) {
         if (integer) {
-            checkFloating(reg)
-            throw AssemblerError("Register $reg is not an integer register")
+            checkFloating(reg, dbg)
+            throw AssemblerError("Register $reg is not an integer register", dbg)
         } else {
-            checkInteger(reg)
-            throw AssemblerError("Register $reg is not a floating point register")
+            checkInteger(reg, dbg)
+            throw AssemblerError("Register $reg is not a floating point register", dbg)
         }
     }
 }
 
-fun checkInteger(reg: String): Int {
+fun checkInteger(reg: String, dbg: DebugInfo): Int {
     return when (reg) {
         "zero" -> 0
         "ra" -> 1
@@ -85,11 +86,11 @@ fun checkInteger(reg: String): Int {
         "t4" -> 29
         "t5" -> 30
         "t6" -> 31
-        else -> throw AssemblerError("register $reg not recognized")
+        else -> throw AssemblerError("register $reg not recognized", dbg)
     }
 }
 
-fun checkFloating(reg: String): Int {
+fun checkFloating(reg: String, dbg: DebugInfo): Int {
     return when (reg) {
         "ft0" -> 0
         "ft1" -> 1
@@ -123,6 +124,6 @@ fun checkFloating(reg: String): Int {
         "ft9" -> 29
         "ft10" -> 30
         "ft11" -> 31
-        else -> throw AssemblerError("register $reg not recognized")
+        else -> throw AssemblerError("register $reg not recognized", dbg)
     }
 }

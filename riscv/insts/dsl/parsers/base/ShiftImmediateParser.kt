@@ -13,10 +13,10 @@ object ShiftImmediateParser : InstructionParser {
     const val SHIFT_MIN = 0
     const val SHIFT_MAX = 31
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 3)
+        checkArgsLength(args.size, 3, dbg)
 
-        mcode[InstructionField.RD] = regNameToNumber(args[0])
-        mcode[InstructionField.RS1] = regNameToNumber(args[1])
-        mcode[InstructionField.SHAMT] = prog.getImmediate(args[2], SHIFT_MIN, SHIFT_MAX)
+        mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
+        mcode[InstructionField.RS1] = regNameToNumber(args[1], dbg = dbg)
+        mcode[InstructionField.SHAMT] = prog.getImmediate(args[2], SHIFT_MIN, SHIFT_MAX, dbg)
     }
 }

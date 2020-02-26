@@ -1,9 +1,9 @@
 package venusbackend.assembler.pseudos
 
+/* ktlint-disable no-wildcard-imports */
+import venusbackend.assembler.*
+/* ktlint-enable no-wildcard-imports */
 import venusbackend.assembler.AssemblerPassOne
-import venusbackend.assembler.AssemblerError
-import venusbackend.assembler.LineTokens
-import venusbackend.assembler.PseudoWriter
 import venusbackend.riscv.isNumeral
 import venusbackend.riscv.userStringToInt
 
@@ -13,15 +13,15 @@ import venusbackend.riscv.userStringToInt
  * This either expands to an `addi` if `imm` is small or a `lui` / `addi` pair if `imm` is big.
  */
 object LI : PseudoWriter() {
-    override operator fun invoke(args: LineTokens, state: AssemblerPassOne): List<LineTokens> {
-        checkArgsLength(args, 3)
+    override operator fun invoke(args: LineTokens, state: AssemblerPassOne, dbg: DebugInfo): List<LineTokens> {
+        checkArgsLength(args, 3, dbg)
         if (!isNumeral(args[2])) {
             return listOf(listOf("addi", args[1], "x0", args[2]))
         }
         val imm = try {
             userStringToInt(args[2])
         } catch (e: NumberFormatException) {
-            throw AssemblerError("immediate to li too large or NaN")
+            throw AssemblerError("immediate to li too large or NaN", dbg)
         }
 
         if (imm in -2048..2047) {

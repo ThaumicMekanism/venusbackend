@@ -13,10 +13,10 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
  */
 object FFRRTypeParser : InstructionParser {
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 3)
+        checkArgsLength(args.size, 3, dbg)
 
-        mcode[InstructionField.RD] = regNameToNumber(args[0])
-        mcode[InstructionField.RS1] = regNameToNumber(args[1], false)
-        mcode[InstructionField.RS2] = regNameToNumber(args[2], false)
+        mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
+        mcode[InstructionField.RS1] = regNameToNumber(args[1], false, dbg)
+        mcode[InstructionField.RS2] = regNameToNumber(args[2], false, dbg)
     }
 }

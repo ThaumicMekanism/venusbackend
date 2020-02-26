@@ -16,10 +16,10 @@ object FITypeParser : InstructionParser {
     const val I_TYPE_MIN = -2048
     const val I_TYPE_MAX = 2047
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 3)
+        checkArgsLength(args.size, 3, dbg)
 
-        mcode[InstructionField.RD] = regNameToNumber(args[0], false)
-        mcode[InstructionField.RS1] = regNameToNumber(args[2])
-        mcode[InstructionField.IMM_11_0] = getImmediate(args[1], I_TYPE_MIN, I_TYPE_MAX)
+        mcode[InstructionField.RD] = regNameToNumber(args[0], false, dbg)
+        mcode[InstructionField.RS1] = regNameToNumber(args[2], dbg = dbg)
+        mcode[InstructionField.IMM_11_0] = getImmediate(args[1], I_TYPE_MIN, I_TYPE_MAX, dbg)
     }
 }

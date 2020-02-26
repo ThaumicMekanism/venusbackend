@@ -13,9 +13,9 @@ object UTypeParser : InstructionParser {
     const val U_TYPE_MIN = 0
     const val U_TYPE_MAX = 1048575
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 2)
+        checkArgsLength(args.size, 2, dbg)
 
-        mcode[InstructionField.RD] = regNameToNumber(args[0])
-        mcode[InstructionField.IMM_31_12] = prog.getImmediate(args[1], U_TYPE_MIN, U_TYPE_MAX)
+        mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
+        mcode[InstructionField.IMM_31_12] = prog.getImmediate(args[1], U_TYPE_MIN, U_TYPE_MAX, dbg)
     }
 }

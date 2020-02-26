@@ -20,10 +20,10 @@ val caddi = Instruction(
                 FieldEqual(InstructionField.IMM_b2_b6, 0, true, listOf(InstructionField.IMM_b12))
         )),
         parser = RawParser { prog, mcode, args, dbg ->
-            checkArgsLength(args.size, 2)
+            checkArgsLength(args.size, 2, dbg)
 
-            mcode[InstructionField.RD] = regNameToNumber(args[0])
-            val imm = getImmediate(args[1], (-(2.0).pow(6 - 1)).toInt(), (2.0).pow(6 - 1).toInt() - 1)
+            mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
+            val imm = getImmediate(args[1], (-(2.0).pow(6 - 1)).toInt(), (2.0).pow(6 - 1).toInt() - 1, dbg)
             val fimm = imm and 0b11111
             mcode[InstructionField.IMM_b2_b6] = fimm
             val simm = (imm and 0b100000) shr 5

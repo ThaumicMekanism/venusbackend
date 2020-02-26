@@ -22,9 +22,9 @@ val jal = Instruction(
         name = "jal",
         format = OpcodeFormat(0b1101111),
         parser = RawParser { prog, mcode, args, dbg ->
-            checkArgsLength(args.size, 2)
+            checkArgsLength(args.size, 2, dbg)
 
-            mcode[InstructionField.RD] = regNameToNumber(args[0])
+            mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
             val label = if (prog.labels.containsKey(args[1]) || args[1].matches(Regex("\\d+[fb]"))) {
                 args[1]
             } else {
@@ -37,10 +37,10 @@ val jal = Instruction(
                 }
             }
             if (label.matches(Regex("\\d+[fb]"))) {
-                val location: Int = prog.getLabelOffset(label, prog.textSize)!! + prog.textSize // I have to add the textsize since I remove it in the get label offset!
-                JALRelocator.invoke(mcode, prog.textSize, location)
+                val location: Int = prog.getLabelOffset(label, prog.textSize, dbg)!! + prog.textSize // I have to add the textsize since I remove it in the get label offset!
+                JALRelocator.invoke(mcode, prog.textSize, location, dbg = dbg)
             } else {
-                prog.addRelocation(JALRelocator, label, 0)
+                prog.addRelocation(JALRelocator, label, 0, dbg = dbg)
             }
         },
         impl16 = NoImplementation,

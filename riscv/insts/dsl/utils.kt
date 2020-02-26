@@ -1,6 +1,7 @@
 package venusbackend.riscv.insts.dsl
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 import venusbackend.numbers.QuadWord
 import venusbackend.riscv.userStringToInt
 import kotlin.math.ceil
@@ -17,7 +18,7 @@ import kotlin.math.log2
  * @throws IllegalArgumentException if the wrong number of arguments is given
  */
 var getImmWarning = ""
-internal fun getImmediate(str: String, min: Int, max: Int): Int {
+internal fun getImmediate(str: String, min: Int, max: Int, dbg: DebugInfo): Int {
     var imm = try {
         userStringToInt(str)
     } catch (e: NumberFormatException) {
@@ -25,7 +26,7 @@ internal fun getImmediate(str: String, min: Int, max: Int): Int {
             str.length > 4 -> " (might be too large)"
             else -> ""
         }
-        throw AssemblerError("invalid number, got $str$hint")
+        throw AssemblerError("invalid number, got $str$hint", dbg)
     }
 
     if (imm !in min..max) {
@@ -38,7 +39,7 @@ internal fun getImmediate(str: String, min: Int, max: Int): Int {
             getImmWarning = """The value that was given was larger than the max allowed value ($max) but within a valid unsigned range (0 to ${imm_range - 1}) so it will be interpreted just as two's complement bits ($imm)."""
         } else {
             val largeimm = if (min < 0 && imm > 0) " or between 0 and $imm_range to fill the bits using two's complement" else ""
-            throw AssemblerError("immediate $str (= $imm) out of range (should be between $min and $max$largeimm)")
+            throw AssemblerError("immediate $str (= $imm) out of range (should be between $min and $max$largeimm)", dbg)
         }
     }
 

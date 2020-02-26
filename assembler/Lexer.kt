@@ -15,7 +15,7 @@ object Lexer {
     private val tokenRE =
             Regex("""(#.*)|$labelPatn|$tokenPatn|$baseRegPatn|(['""])""")
 
-    fun lexLine(line: String): Pair<LineTokens, LineTokens> {
+    fun lexLine(line: String, dbg: DebugInfo? = null): Pair<LineTokens, LineTokens> {
         val labels = ArrayList<String>()
         val insnTokens = ArrayList<String>()
 
@@ -24,14 +24,14 @@ object Lexer {
             when {
                 groups[1] != null -> Unit
                 groups[2] != null && !insnTokens.isEmpty() -> {
-                    throw AssemblerError("label ${groups[2]!!.value} in the middle of an instruction")
+                    throw AssemblerError("label ${groups[2]!!.value} in the middle of an instruction", dbg)
                 }
                 groups[2] != null -> labels.add(groups[2]!!.value)
                 groups[3] != null -> insnTokens.add(groups[3]!!.value)
                 groups[4] != null -> {
                     insnTokens.add("(" + groups[4]!!.value + ")")
                 }
-                else -> throw AssemblerError("unclosed string")
+                else -> throw AssemblerError("unclosed string", dbg)
             }
         }
         return Pair(labels, insnTokens)

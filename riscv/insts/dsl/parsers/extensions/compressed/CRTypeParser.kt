@@ -13,10 +13,10 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
  */
 object CRTypeParser : InstructionParser {
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 2)
+        checkArgsLength(args.size, 2, dbg)
 
-        val crd = regNameToNumber(args[0])
-        val crs2 = regNameToNumber(args[1])
+        val crd = regNameToNumber(args[0], dbg = dbg)
+        val crs2 = regNameToNumber(args[1], dbg = dbg)
 
         mcode[InstructionField.RD] = crd
         mcode[InstructionField.CRS2] = crs2

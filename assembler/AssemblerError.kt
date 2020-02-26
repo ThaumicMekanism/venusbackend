@@ -6,13 +6,20 @@ package venusbackend.assembler
  * @todo split this into AssemblerUserError and AssemblerError
  */
 class AssemblerError : Throwable {
+    companion object {
+        fun parse_msg(msg: String? = null, dbg: DebugInfo? = null): String? {
+            val s = msg ?: return msg
+            val dbg = dbg ?: return msg
+            return "${dbg.prog.name}:${dbg.lineNo}: $msg\n${dbg.line.trim()}"
+        }
+    }
     var line: Int? = null
     var errorType: Throwable? = null
 
     /**
      * @param msg the message to error with
      */
-    constructor(msg: String? = null) : super(msg)
+    constructor(msg: String? = null, dbg: DebugInfo? = null) : super(parse_msg(msg, dbg))
 
     /**
      * @param errorLine the line the error occurred on
@@ -22,12 +29,13 @@ class AssemblerError : Throwable {
         line = errorLine
     }
 
-    constructor(msg: String? = null, errorType: Throwable) : super(msg) {
+    constructor(msg: String? = null, errorType: Throwable, dbg: DebugInfo? = null) : this(msg, dbg) {
         this.errorType = errorType
     }
 
     override fun toString(): String {
-        if (line == null) return super.toString()
-        else return "${super.toString()} on line $line"
+        return super.toString()
+//        if (line == null) return super.toString()
+//        else return "${super.toString()} on line $line"
     }
 }

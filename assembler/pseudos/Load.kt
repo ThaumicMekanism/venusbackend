@@ -11,7 +11,7 @@ import venusbackend.riscv.insts.dsl.relocators.PCRelLoRelocator
  * Writes a load pseudoinstruction. (Those applied to a label)
  */
 object Load : PseudoWriter() {
-    override operator fun invoke(args: LineTokens, state: AssemblerPassOne): List<LineTokens> {
+    override operator fun invoke(args: LineTokens, state: AssemblerPassOne, dbg: DebugInfo): List<LineTokens> {
         if (args.size == 4) {
             if (args[3].startsWith('(')) {
                 return listOf(
@@ -22,17 +22,17 @@ object Load : PseudoWriter() {
                 return listOf(args)
             }
         }
-        checkArgsLength(args, 3)
+        checkArgsLength(args, 3, dbg)
         try {
-            regNameToNumber(args[2])
+            regNameToNumber(args[2], dbg = dbg)
             p1warnings.add(AssemblerWarning("You are using the load pseudoinstruction which takes in rd, symbol and the symbol matches a register name."))
         } catch (e: AssemblerError) {}
 
         val auipc = listOf("auipc", args[1], "0")
-        state.addRelocation(PCRelHiRelocator, state.getOffset(), args[2])
+        state.addRelocation(PCRelHiRelocator, state.getOffset(), args[2], dbg = dbg)
 
         val load = listOf(args[0], args[1], "0", args[1])
-        state.addRelocation(PCRelLoRelocator, state.getOffset() + 4, args[2])
+        state.addRelocation(PCRelLoRelocator, state.getOffset() + 4, args[2], dbg = dbg)
 
         return listOf(auipc, load)
     }

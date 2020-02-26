@@ -1,6 +1,7 @@
 package venusbackend.assembler.pseudos
 
 import venusbackend.assembler.AssemblerPassOne
+import venusbackend.assembler.DebugInfo
 import venusbackend.assembler.LineTokens
 import venusbackend.assembler.PseudoWriter
 
@@ -9,8 +10,8 @@ import venusbackend.assembler.PseudoWriter
  * @todo add a settings option for "extended pseudoinstructions"
  */
 object SGT : PseudoWriter() {
-    override operator fun invoke(args: LineTokens, state: AssemblerPassOne): List<LineTokens> {
-        checkArgsLength(args, 4)
+    override operator fun invoke(args: LineTokens, state: AssemblerPassOne, dbg: DebugInfo): List<LineTokens> {
+        checkArgsLength(args, 4, dbg)
         checkStrictMode()
         val unsigned = if (args[0].endsWith("u")) "u" else ""
         return listOf(listOf("slt$unsigned", args[1], args[3], args[2]))

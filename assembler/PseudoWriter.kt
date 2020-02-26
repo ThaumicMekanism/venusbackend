@@ -11,5 +11,5 @@ abstract class PseudoWriter {
      * @param state the venusbackend.assembler's state
      * @return a list of LineTokens corresponding to the TAL instruction
      */
-    internal abstract operator fun invoke(args: LineTokens, state: AssemblerPassOne): List<LineTokens>
+    internal abstract operator fun invoke(args: LineTokens, state: AssemblerPassOne, dbg: DebugInfo): List<LineTokens>
 }

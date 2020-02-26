@@ -13,7 +13,7 @@ object STypeParser : InstructionParser {
     const val S_TYPE_MIN = -2048
     const val S_TYPE_MAX = 2047
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 3)
+        checkArgsLength(args.size, 3, dbg)
 
 //        val real_line = dbg.line.split(Regex("#")).firstOrNull()
 //        // Do not need to check of other paren because the lexer will ensure no mismatch.
@@ -21,9 +21,9 @@ object STypeParser : InstructionParser {
 //            throw AssemblerError("Store takes only one set of parentheses around the last register!")
 //        }
 
-        val imm = prog.getImmediate(args[1], S_TYPE_MIN, S_TYPE_MAX)
-        mcode[InstructionField.RS1] = regNameToNumber(args[2])
-        mcode[InstructionField.RS2] = regNameToNumber(args[0])
+        val imm = prog.getImmediate(args[1], S_TYPE_MIN, S_TYPE_MAX, dbg)
+        mcode[InstructionField.RS1] = regNameToNumber(args[2], dbg = dbg)
+        mcode[InstructionField.RS2] = regNameToNumber(args[0], dbg = dbg)
         mcode[InstructionField.IMM_4_0] = imm
         mcode[InstructionField.IMM_11_5] = imm shr 5
     }

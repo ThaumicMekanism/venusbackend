@@ -17,7 +17,7 @@ val cnop = Instruction(
                 FieldEqual(InstructionField.IMM_b2_b6, 0, false, listOf(InstructionField.IMM_b12))
         )),
         parser = RawParser { prog, mcode, args, dbg ->
-            checkArgsLength(args.size, 0)
+            checkArgsLength(args.size, 0, dbg)
         },
         impl16 = RawImplementation { mcode, sim ->
             throw InstructionNotSupportedError("C.NOP is not supported by 16 bit systems!")

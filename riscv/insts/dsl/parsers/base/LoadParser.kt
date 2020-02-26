@@ -12,7 +12,7 @@ object LoadParser : InstructionParser {
     const val I_TYPE_MIN = -2048
     const val I_TYPE_MAX = 2047
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 3)
+        checkArgsLength(args.size, 3, dbg)
 
 //        val real_line = dbg.line.split(Regex("#")).firstOrNull()
 //        if (real_line == null) {
@@ -24,8 +24,8 @@ object LoadParser : InstructionParser {
 //            throw AssemblerError("Load takes only one set of parentheses around the last register!")
 //        }
 
-        mcode[InstructionField.RD] = regNameToNumber(args[0])
-        mcode[InstructionField.RS1] = regNameToNumber(args[2])
-        mcode[InstructionField.IMM_11_0] = prog.getImmediate(args[1], I_TYPE_MIN, I_TYPE_MAX)
+        mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
+        mcode[InstructionField.RS1] = regNameToNumber(args[2], dbg = dbg)
+        mcode[InstructionField.IMM_11_0] = prog.getImmediate(args[1], I_TYPE_MIN, I_TYPE_MAX, dbg)
     }
 }

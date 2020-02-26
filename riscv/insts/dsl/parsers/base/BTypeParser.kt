@@ -14,19 +14,19 @@ object BTypeParser : InstructionParser {
     const val B_TYPE_MIN = -2048
     const val B_TYPE_MAX = 2047
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
-        checkArgsLength(args.size, 3)
+        checkArgsLength(args.size, 3, dbg)
 
-        mcode[InstructionField.RS1] = regNameToNumber(args[0])
-        mcode[InstructionField.RS2] = regNameToNumber(args[1])
+        mcode[InstructionField.RS1] = regNameToNumber(args[0], dbg = dbg)
+        mcode[InstructionField.RS2] = regNameToNumber(args[1], dbg = dbg)
 
         val label = args[2]
         var imm: Int? = null
         try {
-            imm = prog.getLabelOffset(label, prog.textSize)
-                    ?: throw AssemblerError("could not find label $label")
+            imm = prog.getLabelOffset(label, prog.textSize, dbg)
+                    ?: throw AssemblerError("could not find label $label", dbg)
         } catch (e: AssemblerError) {
             try {
-                imm = prog.getLabelOffset(venusInternalLabels + (userStringToInt(label) + prog.textSize), prog.textSize)
+                imm = prog.getLabelOffset(venusInternalLabels + (userStringToInt(label) + prog.textSize), prog.textSize, dbg)
                 getImmWarning += "Interpreting the label as an offset!; "
             } catch (e2: Throwable) {
                 throw e
@@ -35,7 +35,7 @@ object BTypeParser : InstructionParser {
 
         if (imm !in B_TYPE_MIN..B_TYPE_MAX) {
             getImmWarning = getImmWarning.replace("Interpreting the label as an offset!; ", "")
-            throw AssemblerError("branch to $label too far")
+            throw AssemblerError("branch to $label too far", dbg)
         }
 
         mcode[InstructionField.IMM_11_B] = imm !! shr 11

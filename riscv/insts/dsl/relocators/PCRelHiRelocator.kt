@@ -1,10 +1,11 @@
 package venusbackend.riscv.insts.dsl.relocators
 
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 
 private object PCRelHiRelocator32 : Relocator32 {
-    override operator fun invoke(mcode: MachineCode, pc: Int, target: Int) {
+    override operator fun invoke(mcode: MachineCode, pc: Int, target: Int, dbg: DebugInfo) {
         mcode[InstructionField.IMM_31_12] = (target - pc + 0x800) shr 12
     }
 }

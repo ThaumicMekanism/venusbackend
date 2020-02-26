@@ -20,10 +20,10 @@ val clwsp = Instruction(
                 FieldEqual(InstructionField.RD, 0, true)
         )),
         parser = RawParser { prog, mcode, args, dbg ->
-            checkArgsLength(args.size, 2)
+            checkArgsLength(args.size, 2, dbg)
 
-            mcode[InstructionField.RD] = regNameToNumber(args[0])
-            val imm = getImmediate(args[1], (-(2.0).pow(8 - 1)).toInt(), (2.0).pow(8 - 1).toInt() - 1)
+            mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
+            val imm = getImmediate(args[1], (-(2.0).pow(8 - 1)).toInt(), (2.0).pow(8 - 1).toInt() - 1, dbg)
             throw NotImplementedError("Still working on correct imm for C.LWSP")
 //            mcode[InstructionField.IMM_b2_b6] = (imm and 0b1111100) shr 2
 //            mcode[InstructionField.IMM_b12] = (imm shr 7) and 0b1

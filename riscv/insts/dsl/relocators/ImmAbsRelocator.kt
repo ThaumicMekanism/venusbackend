@@ -1,17 +1,18 @@
 package venusbackend.riscv.insts.dsl.relocators
 
 import venusbackend.assembler.AssemblerError
+import venusbackend.assembler.DebugInfo
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 
 /** Set the immediate field of an I-type instruction MCODE to TARGET.
  *  The value of PC is unused. */
 private object ImmAbsRelocator32 : Relocator32 {
-    override operator fun invoke(mcode: MachineCode, pc: Int, target: Int) {
+    override operator fun invoke(mcode: MachineCode, pc: Int, target: Int, dbg: DebugInfo) {
         if (target in -2048..2047) {
             mcode[InstructionField.IMM_11_0] = target
         } else {
-            throw AssemblerError("immediate value out of range: $target")
+            throw AssemblerError("immediate value out of range: $target", dbg)
         }
     }
 }

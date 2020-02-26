@@ -108,11 +108,8 @@ class Program(var name: String = "anonymous") {
     /** Return the symbolic part of LABELARG, where LABELARG may be either
      *  <symbol>, <symbol>+<decimal numeral>, or <symbol>-<decimal numeral>.
      */
-    fun symbolPart(labelArg: String): String {
-        val match = SYM_PATN.find(labelArg)
-        if (match == null) {
-            throw AssemblerError("bad symbol reference: $labelArg")
-        }
+    fun symbolPart(labelArg: String, dbg: DebugInfo): String {
+        val match = SYM_PATN.find(labelArg) ?: throw AssemblerError("bad symbol reference: $labelArg", dbg)
         return match.groupValues[1]
     }
     /** Return the numeric offset part of LABELARG, where LABELARG may be either
@@ -122,11 +119,8 @@ class Program(var name: String = "anonymous") {
      *   <absolute symbol> refers to a .equiv'ed symbol that resolves to
      *   an immediate constant (as in .equiv value, 13).
      */
-    fun labelOffsetPart(labelArg: String): Int {
-        val match = SYM_PATN.find(labelArg)
-        if (match == null) {
-            throw AssemblerError("ill-formed symbol reference: $labelArg")
-        }
+    fun labelOffsetPart(labelArg: String, dbg: DebugInfo): Int {
+        val match = SYM_PATN.find(labelArg) ?: throw AssemblerError("ill-formed symbol reference: $labelArg", dbg)
         val (_, sign, num, offsetSym) = match.destructured
         if (sign == "") {
             return 0
@@ -135,7 +129,7 @@ class Program(var name: String = "anonymous") {
             return (sign + num).toInt()
         }
         if (offsetSym !in labels) {
-            throw AssemblerError("undefined symbol: $offsetSym")
+            throw AssemblerError("undefined symbol: $offsetSym", dbg)
         }
         return if (sign == "-") -labels[offsetSym]!! else labels[offsetSym]!!
     }
@@ -148,11 +142,11 @@ class Program(var name: String = "anonymous") {
      * @param label the label to find
      * @returns the relative offset, or null if it does not exist.
      */
-    fun getLabelOffset(label: String, address: Int): Int? {
+    fun getLabelOffset(label: String, address: Int, dbg: DebugInfo): Int? {
         // TODO FIX ME TO WORK WITH FORWARD AND BACKWARD LOCAL REFERENCE
         val loc = if (label.matches(Regex("\\d+[fb]"))) {
             val intlabel = label.substring(0, label.length - 1).toInt()
-            val number_set = localReferences[intlabel] ?: throw AssemblerError("The number label '$intlabel' has not been defined!")
+            val number_set = localReferences[intlabel] ?: throw AssemblerError("The number label '$intlabel' has not been defined!", dbg)
             if (label.matches(Regex("\\d+f"))) {
                 number_set.filter { it >= address }.min()
             } else {
@@ -174,20 +168,20 @@ class Program(var name: String = "anonymous") {
      *
      * @throws IllegalArgumentException if the wrong number of arguments is given
      */
-    internal fun getImmediate(str: String, min: Int, max: Int): Int {
+    internal fun getImmediate(str: String, min: Int, max: Int, dbg: DebugInfo): Int {
         val imm = try {
             userStringToInt(str)
         } catch (e: NumberFormatException) {
-            val sym = symbolPart(str)
-            val offsetVal = labelOffsetPart(str)
+            val sym = symbolPart(str, dbg)
+            val offsetVal = labelOffsetPart(str, dbg)
             if (sym != "" && sym !in labels) {
-                throw AssemblerError("undefined symbol: $sym")
+                throw AssemblerError("undefined symbol: $sym", dbg)
             }
             val symVal = if (sym == "") 0 else labels[sym]!!
             symVal + offsetVal
         }
         if (imm !in min..max)
-            throw AssemblerError("immediate $str (= $imm) out of range (should be between $min and $max)")
+            throw AssemblerError("immediate $str (= $imm) out of range (should be between $min and $max)", dbg)
         return imm
     }
 
@@ -204,8 +198,9 @@ class Program(var name: String = "anonymous") {
         relocator: Relocator,
         label: String,
         labelOffset: Int,
-        offset: Int = textSize
-    ) = relocationTable.add(RelocationInfo(relocator, offset, label, labelOffset))
+        offset: Int = textSize,
+        dbg: DebugInfo
+    ) = relocationTable.add(RelocationInfo(relocator, offset, label, labelOffset, dbg))
 
     /**
      * Adds a line to the data relocation table.
@@ -219,8 +214,9 @@ class Program(var name: String = "anonymous") {
     fun addDataRelocation(
         label: String,
         labelOffset: Int,
-        offset: Int = textSize
-    ) = dataRelocationTable.add(DataRelocationInfo(offset, label, labelOffset))
+        offset: Int = textSize,
+        dbg: DebugInfo
+    ) = dataRelocationTable.add(DataRelocationInfo(offset, label, labelOffset, dbg))
 
     /**
      * Makes a label global.
