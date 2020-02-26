@@ -1,4 +1,4 @@
-package venusbackend.riscv.insts.integer.base.i.ecall
+ package venusbackend.riscv.insts.integer.base.i.ecall
 
 import venus.Renderer
 import venusbackend.compareTo
@@ -147,6 +147,10 @@ private fun readFile(sim: Simulator) {
     val fdID = sim.getReg(Registers.a1).toInt()
     val bufferAddress = sim.getReg(Registers.a2).toInt()
     val size = sim.getReg(Registers.a3).toInt()
+    if (size < 0) {
+        sim.setReg(Registers.a0, FilesHandler.EOF)
+        return
+    }
     val data = sim.filesHandler.readFileDescriptor(fdID, size)
     var offset = 0
     if (data != null) {
@@ -169,6 +173,10 @@ private fun writeFile(sim: Simulator) {
     val bufferAddress = sim.getReg(Registers.a2).toInt()
     val sizeOfItem = sim.getReg(Registers.a4).toInt()
     val size = sim.getReg(Registers.a3).toInt() * sizeOfItem
+    if (size < 0) {
+        sim.setReg(Registers.a0, FilesHandler.EOF)
+        return
+    }
     var offset = 0
     val sb = StringBuilder()
     while (offset < size) {

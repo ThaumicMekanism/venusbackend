@@ -88,6 +88,9 @@ class FilesHandler(sim: Simulator) {
     }
 
     fun readFileDescriptor(fdID: Int, size: Int): String? {
+        if (size < 0) {
+            return null
+        }
         val fd = getFileDescriptor(fdID)
         return fd?.read(size)
     }
