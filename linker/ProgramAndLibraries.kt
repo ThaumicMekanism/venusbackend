@@ -38,7 +38,7 @@ class ProgramAndLibraries(val progs: List<Program>, vfs: VirtualFileSystem) {
             needToImportPrograms.remove(progImport)
             // Get the file
             val obj = if (progImport.relative) {
-                val parentNode = vfs.getObjectFromPath(progData.importingProgramAbsPath, location=vfs.sentinel) ?: throw AssemblerError("Could not find the library: $progname from the relative path from the file. Parent file not found! This library was imported by ${progData.importingProgram}.")
+                val parentNode = vfs.getObjectFromPath(progData.importingProgramAbsPath, location = vfs.sentinel) ?: throw AssemblerError("Could not find the library: $progname from the relative path from the file. Parent file not found! This library was imported by ${progData.importingProgram}.")
                 val loc = vfs.getParentFromObject(parentNode)
                 vfs.getObjectFromPath(progname, location = loc) ?: throw AssemblerError("Could not find the library: $progname from the relative path from the file. This library was imported by ${progData.importingProgram}.")
             } else {
