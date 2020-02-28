@@ -11,6 +11,7 @@ import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.floating.Decimal
 import venusbackend.riscv.insts.integer.base.i.ecall.Alloc
 import venusbackend.simulator.diffs.*
+import kotlin.math.max
 
 /* ktlint-enable no-wildcard-imports */
 
@@ -60,6 +61,8 @@ class Simulator(
             state.mem.storeByte(dataOffset, datum.toInt())
             dataOffset++
         }
+
+        state.setHeapEnd(max(state.getHeapEnd().toInt(), dataOffset))
 
         setPC(linkedProgram.startPC ?: MemorySegments.TEXT_BEGIN)
         if (settings.setRegesOnInit) {
