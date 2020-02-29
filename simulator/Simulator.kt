@@ -150,7 +150,7 @@ class Simulator(
             if (e.infe == null) {
                 throw e
             }
-            Renderer.displayError("\n[ERROR]: Could not decode the instruction (0x" + mcode.toString(16) + ") at pc='" + getPC() + "'!\n" +
+            Renderer.displayError("\n[ERROR]: Could not decode the instruction (0x" + mcode.toString(16) + ") at pc='" + toHex(getPC()) + "'!\n" +
                     "Please make sure that you are not jumping to the middle of an instruction!\n")
             throw e
         }

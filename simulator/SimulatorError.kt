@@ -5,9 +5,9 @@ import venusbackend.riscv.insts.InstructionNotFoundError
 /**
  * Thrown when errors occur during simulation.
  */
-class SimulatorError : Throwable {
-    var infe: InstructionNotFoundError? = null
-    var handled: Boolean? = null
+open class SimulatorError : Throwable {
+    open var infe: InstructionNotFoundError? = null
+    open var handled: Boolean? = null
     /**
      * @param msg the message to error with
      */

@@ -3,7 +3,7 @@ package venusbackend.simulator
 /**
  * Thrown when errors occur when memory is not aligned.
  */
-class AlignmentError : Throwable {
+class AlignmentError : SimulatorError {
     /**
      * @param msg the message to error with
      */
