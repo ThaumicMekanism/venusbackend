@@ -37,7 +37,7 @@ data class MallocNode(
             val lM = sim.loadWordwCache(nodeAddr + lowBuffer)
             val uM = sim.loadWordwCache(nodeAddr + lowBuffer + 20)
             if ((uM != upperMagic) || (lM != lowerMagic)) {
-                print("The magic value for this malloc node is incorrect! This means you are overriding malloc metadata!\n")
+                print("The magic value for this malloc node is incorrect! This means you are overriding malloc metadata OR have specified the address of an incorrect malloc node!\n")
                 print(this)
                 return null
             }
