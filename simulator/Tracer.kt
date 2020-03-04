@@ -89,7 +89,7 @@ class Tracer(var sim: Simulator) {
         currentTrace.prevTrace = this.tr.prevTrace
         this.tr.trace.add(currentTrace)
         this.tr.traced = true
-        sim.reset()
+//        sim.reset()
         if (this.twoStage) {
             var i = this.tr.trace.lastIndex
             if (i < 0) {
