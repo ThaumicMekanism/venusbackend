@@ -262,7 +262,7 @@ class Simulator(
     var ecallMsg = ""
     var branched = false
     var jumped = false
-    fun reset() {
+    fun reset(keep_args: Boolean = false) {
         while (this.canUndo()) {
             this.undo()
         }
@@ -272,7 +272,11 @@ class Simulator(
         this.stdout = ""
         cycles = 0
         exitcode = null
+        val args = ArrayList(this.args)
         removeAllArgs()
+        if (keep_args) {
+            addArg(args)
+        }
         state.reset()
     }
 
