@@ -15,6 +15,7 @@ import venusbackend.simulator.SimulatorError
  * This singleton implements a simple two-pass assembler to transform files into programs.
  */
 object Assembler {
+    val defaultDefines: MutableMap<String, String> = HashMap()
     /**
      * Assembles the given code into an unlinked Program.
      *
@@ -101,7 +102,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
     /** Preprocessor defines */
-    private val defines = HashMap<String, String>()
+    private val defines = HashMap<String, String>(Assembler.defaultDefines)
 
     fun run(): PassOneOutput {
         doPassOne()
