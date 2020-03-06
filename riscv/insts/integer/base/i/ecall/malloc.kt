@@ -1,6 +1,8 @@
 package venusbackend.riscv.insts.integer.base.i.ecall
 
+import venus.Renderer
 import venusbackend.simulator.Simulator
+import venusbackend.toHex
 
 /**
  * This is a wrapper file for all basic malloc operations.
@@ -20,7 +22,9 @@ data class MallocNode(
     var free: Int,
     var nextNode: Int,
     var prevNode: Int,
-    var nodeAddr: Int
+    var nodeAddr: Int,
+    var aupperMagic: Int = upperMagic,
+    var alowerMagic: Int = lowerMagic
 ) {
     companion object {
         val lowBuffer = 0
@@ -30,29 +34,37 @@ data class MallocNode(
         val lowerMagic: Int = 0x3CDCDCDC
         val minSize: Int = 1
         val nodes: HashMap<Int, MallocNode> = HashMap()
-        fun loadBlock(sim: Simulator, nodeAddr: Int): MallocNode? {
+        fun loadBlock(sim: Simulator, nodeAddr: Int, ignore_magic: Boolean = false): MallocNode? {
             if (nodeAddr == 0) {
                 return null
             }
             val lM = sim.loadWordwCache(nodeAddr + lowBuffer)
-            val uM = sim.loadWordwCache(nodeAddr + lowBuffer + 20)
-            if ((uM != upperMagic) || (lM != lowerMagic)) {
-                print("The magic value for this malloc node is incorrect! This means you are overriding malloc metadata OR have specified the address of an incorrect malloc node!\n")
-                print(this)
-                return null
-            }
             val size = sim.loadWordwCache(nodeAddr + lowBuffer + 4)
             val free = sim.loadWordwCache(nodeAddr + lowBuffer + 8)
             val nextNode = sim.loadWordwCache(nodeAddr + lowBuffer + 12)
             val prevNode = sim.loadWordwCache(nodeAddr + lowBuffer + 16)
-            return MallocNode(
+            val uM = sim.loadWordwCache(nodeAddr + lowBuffer + 20)
+            val node = MallocNode(
                     size = size,
                     free = free,
                     nextNode = nextNode,
                     prevNode = prevNode,
-                    nodeAddr = nodeAddr
+                    nodeAddr = nodeAddr,
+                    alowerMagic = lM,
+                    aupperMagic = uM
             )
+
+            if (((uM != upperMagic) || (lM != lowerMagic)) && !ignore_magic) {
+                Renderer.stderr("The magic value for this malloc node is incorrect! This means you are overriding malloc metadata OR have specified the address of an incorrect malloc node!\n")
+                Renderer.stderr(node)
+                return null
+            }
+            return node
         }
+    }
+
+    override fun toString(): String {
+        return "Node Address: ${toHex(nodeAddr)}\nsize: ${toHex(size)} B\nfree: ${isFree()}\nPrevious Node Address: ${toHex(prevNode)}\nNext Node Address: ${toHex(nextNode)}\nLower Magic Value: A: ${toHex(alowerMagic)} E: ${toHex(lowerMagic)}\nUpper Magic Value: A: ${toHex(aupperMagic)} E: ${toHex(upperMagic)}\nMetadata Size: ${toHex(sizeof)} B\nMinimum Node Size (Bytes): ${toHex(minSize)} B\nLower Buffer Size: ${toHex(lowBuffer)} B\nUpper Buffer Size: ${toHex(highBuffer)} B\nSentinel: ${isSentinel()}\nNull (not in memory): ${isNull()}"
     }
 
     fun storeMagic(sim: Simulator) {
@@ -83,7 +95,7 @@ data class MallocNode(
 
     fun storeNode(sim: Simulator) {
         if (this.nodeAddr == 0) {
-            print("Prevented a store of a null malloc node!\n")
+            Renderer.stderr("Prevented a store of a null malloc node!\n")
             return
         }
         this.storeMagic(sim)
@@ -133,7 +145,7 @@ data class MallocNode(
         return loadBlock(sim, this.prevNode)
     }
 
-    fun allocateNode(sim: Simulator, wantedSize: Int, calloc: Boolean = false): Boolean {
+    fun allocateNode(sim: Simulator, wantedSize: Int, calloc: Boolean = false): Boolean? {
         if (this.size < wantedSize) {
             return false
         }
@@ -149,7 +161,7 @@ data class MallocNode(
             val newNodeSize = this.size - (wantedSize + MallocNode.sizeof)
             val newNode = MallocNode(newNodeSize, 1, this.nextNode, this.nodeAddr, newNodeAddr)
             if (this.nextNode != 0) {
-                val nextNodeMetadata = getNextNode(sim)!!
+                val nextNodeMetadata = getNextNode(sim) ?: return null
                 nextNodeMetadata.prevNode = newNodeAddr
                 nextNodeMetadata.storeNode(sim)
             }
@@ -163,11 +175,13 @@ data class MallocNode(
 
     fun freeNode(sim: Simulator) {
         if (this.isFree()) {
-            print("Double free!\n")
+            Renderer.stderr("Double free!\n")
+            Renderer.stderr(this)
             return
         }
         if (this.isSentinel()) {
-            print("You cannot free the sentinel node!\n")
+            Renderer.stderr("You cannot free the sentinel node!\n")
+            Renderer.stderr(this)
             return
         }
         this.free = 1
@@ -176,16 +190,16 @@ data class MallocNode(
         var prev: MallocNode = this
         var s = 0
 
-        while (next.getNextNode(sim)!!.isFree()) {
-            next = next.getNextNode(sim)!!
+        while (next.getNextNode(sim)?.isFree() ?: return) {
+            next = next.getNextNode(sim) ?: return
             if (next.isNull()) {
                 break
             }
             s += MallocNode.sizeof + next.size
         }
 
-        while (!prev.isSentinel() && prev.getPrevNode(sim)?.isFree()!!) {
-            prev = prev.getPrevNode(sim)!!
+        while (!prev.isSentinel() && prev.getPrevNode(sim)?.isFree() ?: return) {
+            prev = prev.getPrevNode(sim) ?: return
             s += MallocNode.sizeof + next.size
         }
 
@@ -264,14 +278,17 @@ class Alloc(val sim: Simulator) {
             return 0
         }
         var m = MallocNode.loadBlock(sim, sentinelMetadata) ?: run {
-            print("Failed to get the sentinel metadata block!\n")
+            Renderer.stderr("Failed to get the sentinel metadata block!\n")
+            Renderer.stderr(MallocNode.loadBlock(sim, sentinelMetadata, true) ?: "null")
             return 0
         }
 
         while (!m.isNextNull()) {
-            m = m.getNextNode(sim)!!
+            m = m.getNextNode(sim) ?: run {
+                return 0
+            }
             if (m.canFit(size)) {
-                if (m.allocateNode(sim, size, calloc)) {
+                if (m.allocateNode(sim, size, calloc) ?: return 0) {
                     return m.dataAddr()
                 }
             }
@@ -333,7 +350,8 @@ class Alloc(val sim: Simulator) {
         }
         var counter = 0
         var m = MallocNode.loadBlock(sim, sentinelMetadata) ?: run {
-            print("Failed to get the sentinel metadata block!\n")
+            Renderer.stderr("Failed to get the sentinel metadata block!\n")
+            Renderer.stderr(MallocNode.loadBlock(sim, sentinelMetadata, true) ?: "null")
             return -1
         }
         if (m.isNextNull()) {
