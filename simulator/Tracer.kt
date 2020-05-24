@@ -96,7 +96,10 @@ class Tracer(var sim: Simulator) {
                 return
             }
             var prevmc = MachineCode(0)
-            var prevpc = this.tr.trace[i].pc + prevmc.length
+            var prevpc = this.tr.trace[i].pc
+//            if (!this.tr.trace[i].branched and !this.tr.trace[i].jumped) {
+                prevpc += prevmc.length
+//            }
             while (i > 0) {
                 /*FIXME Make this loop another call.*/
                 val cur = this.tr.trace[i]
@@ -181,9 +184,10 @@ class Tracer(var sim: Simulator) {
         }
         t.line = this.tr.stringIndex
         val peaked = this.tr.peak()
-        if (twoStage && this.instFirst && (peaked.jumped || peaked.branched) && t.pc > sim.getMaxPC()) {
+        if (twoStage && this.instFirst && (peaked.jumped || peaked.branched) && t.pc > sim.getMaxPC() && t == peaked) {
             t.pc = t.pc.toInt() + 4
         }
+
         this.tr.str += t.getString(format, base)
         this.tr.stringIndex++
         if (twoStage && !this.instFirst) {
@@ -299,5 +303,8 @@ class TraceEncapsulation {
     }
     fun hasNext(): Boolean {
         return curLoc < trace.size
+    }
+    fun numberLeft(): Int {
+        return trace.size - curLoc
     }
 }
