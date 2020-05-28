@@ -359,6 +359,7 @@ class Alloc(val sim: Simulator) {
             return counter
         }
         m = m.getNextNode(sim) ?: return -1
+        counter++
         while (!m.isNextNull()) {
             if (!m.isFree()) {
                 if (m.size > 0) { // We want to ignore the sentinel node.
