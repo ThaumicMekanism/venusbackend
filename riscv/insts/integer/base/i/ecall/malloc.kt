@@ -359,13 +359,13 @@ class Alloc(val sim: Simulator) {
             return counter
         }
         while (!m.isNextNull()) {
+            // If we fail to get the next node when it should exist, we must return -1 to indicate an error.
+            m = m.getNextNode(this.sim) ?: return -1
             if (!m.isFree()) {
                 if (m.size > 0) { // We want to ignore the sentinel node.
                     counter++
                 }
             }
-            // If we fail to get the next node when it should exist, we must return -1 to indicate an error.
-            m = m.getNextNode(this.sim) ?: return -1
         }
         return counter
     }
