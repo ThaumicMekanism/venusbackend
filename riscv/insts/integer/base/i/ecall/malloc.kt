@@ -186,6 +186,9 @@ data class MallocNode(
         }
         this.free = 1
         this.storeFree(sim)
+        return
+        // There is a bug in the below code which is causing incorrect behavior when allocating 5 items then
+        // deallocating them then reallocating larger versions of them.
         var next: MallocNode = this
         var prev: MallocNode = this
         var s = 0
@@ -200,14 +203,14 @@ data class MallocNode(
 
         while (!prev.isSentinel() && prev.getPrevNode(sim)?.isFree() ?: return) {
             prev = prev.getPrevNode(sim) ?: return
-            s += MallocNode.sizeof + next.size
+            s += MallocNode.sizeof + prev.size
         }
 
         if (this != next || this != prev) {
             if (this != prev) {
-                s += MallocNode.sizeof + next.size
+                s += MallocNode.sizeof + this.size
             }
-            prev.size += s
+            prev.size += s - prev.size
 
             prev.nextNode = next.nodeAddr
             next.prevNode = prev.nodeAddr
