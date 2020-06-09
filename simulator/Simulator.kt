@@ -81,6 +81,10 @@ class Simulator(
 //        breakpoints = Array(linkedProgram.prog.insts.size, { false })
     }
 
+    fun setHistoryLimit(limit: Int) {
+        this.history.limit = limit
+    }
+
     fun isDone(): Boolean {
         return if (settings.ecallOnlyExit) {
             this.exitcode != null
