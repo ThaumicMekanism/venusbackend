@@ -11,5 +11,6 @@ data class SimulatorSettings(
     var maxSteps: Int = -1,
     var ASLR: Boolean = false,
     var NX_bit: Boolean = false,
-    var allowAccessBtnStackHeap: Boolean = false
+    var allowAccessBtnStackHeap: Boolean = false,
+    var max_histroy: Int = -1
 )

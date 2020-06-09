@@ -26,7 +26,7 @@ class Simulator(
 ) {
 
     private var cycles = 0
-    private val history = History()
+    private val history = History(settings.max_histroy)
     private val preInstruction = ArrayList<Diff>()
     private val postInstruction = ArrayList<Diff>()
 //    private val breakpoints: Array<Boolean>
