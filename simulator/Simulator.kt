@@ -82,6 +82,7 @@ class Simulator(
     }
 
     fun setHistoryLimit(limit: Int) {
+        this.settings.max_histroy = limit
         this.history.limit = limit
     }
 
@@ -269,6 +270,10 @@ class Simulator(
     fun reset(keep_args: Boolean = false) {
         while (this.canUndo()) {
             this.undo()
+            cycles--
+        }
+        if (cycles > 0) {
+            throw SimulatorError("Failed to reset as there is not enough history")
         }
         this.branched = false
         this.jumped = false

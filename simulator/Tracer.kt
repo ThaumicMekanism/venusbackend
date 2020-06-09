@@ -58,7 +58,7 @@ class Tracer(var sim: Simulator) {
 
     fun traceStart() {
         traceFullReset()
-        sim.reset(keep_args = true)
+//        sim.reset(keep_args = true)
         if (this.twoStage) {
             this.tr.trace.add(Trace(didBrach(), didJump(), getecallMsg(), getRegs(), if (!sim.isDone()) sim.getNextInstruction() else MachineCode(0), this.tr.traceLine, sim.getPC()))
             this.tr.traceLine++
@@ -89,7 +89,7 @@ class Tracer(var sim: Simulator) {
         currentTrace.prevTrace = this.tr.prevTrace
         this.tr.trace.add(currentTrace)
         this.tr.traced = true
-        sim.reset(keep_args = true)
+//        sim.reset(keep_args = true)
         if (this.twoStage) {
             var i = this.tr.trace.lastIndex
             if (i < 0) {
