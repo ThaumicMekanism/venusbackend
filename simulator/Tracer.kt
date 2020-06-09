@@ -20,6 +20,7 @@ class Tracer(var sim: Simulator) {
     var maxSteps = 1000000
     var tr = TraceEncapsulation()
     var twoStage = false
+    var startPC = 0
 
     companion object {
         var wordAddressed = false
@@ -58,7 +59,8 @@ class Tracer(var sim: Simulator) {
 
     fun traceStart() {
         traceFullReset()
-//        sim.reset(keep_args = true)
+        sim.reset(keep_args = true)
+        this.startPC = sim.getPC().toInt()
         if (this.twoStage) {
             this.tr.trace.add(Trace(didBrach(), didJump(), getecallMsg(), getRegs(), if (!sim.isDone()) sim.getNextInstruction() else MachineCode(0), this.tr.traceLine, sim.getPC()))
             this.tr.traceLine++
@@ -209,7 +211,11 @@ class Tracer(var sim: Simulator) {
 
     fun traceStringBranchHelper(t: Trace) {
         val pt = t.prevTrace
-        val flushed = pt?.copy() ?: this.getSingleTrace(-1)
+//        val flushed = pt?.copy() ?: this.getSingleTrace(-1)
+        val flushed = pt?.copy() ?: t.copy()
+        if (pt == null) {
+            flushed.pc = this.startPC
+        }
         var nextPC = flushed.pc + flushed.inst.length
         flushed.pc = nextPC
         nextPC -= MemorySegments.TEXT_BEGIN
@@ -223,7 +229,11 @@ class Tracer(var sim: Simulator) {
     }
     fun traceStringJumpHelper(t: Trace) {
         val pt = t.prevTrace
-        val flushed = pt?.copy() ?: this.getSingleTrace(-1)
+//        val flushed = pt?.copy() ?: this.getSingleTrace(-1)
+        val flushed = pt?.copy() ?: t.copy()
+        if (pt == null) {
+            flushed.pc = this.startPC
+        }
         var nextPC = flushed.pc + flushed.inst.length
         flushed.pc = nextPC
         nextPC -= MemorySegments.TEXT_BEGIN
