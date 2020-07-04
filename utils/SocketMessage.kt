@@ -1,17 +1,14 @@
 package venusbackend.utils
 
-data class SocketMessage(var v: String, var cmd: String, var data: Any = "") {
+data class SocketMessage(var v: String, var cmd: String, var data: Any = "", var id: Int=0) {
     companion object {
-        fun parse(data: Map<String, Any>): SocketMessage {
+        fun parse(dat: Map<String, Any>): SocketMessage {
             return SocketMessage(
-                v = data["v"] as String,
-                cmd = data["cmd"] as String,
-                data = data["data"] ?: ""
+                v = dat["v"] as String,
+                cmd = dat["cmd"] as String,
+                data = dat["data"] ?: "",
+                id = dat["id"] as Int
             )
         }
-    }
-
-    fun mutableMap(): MutableMap<String, Any> {
-        return mutableMapOf<String, Any>(Pair("v", v), Pair("cmd", cmd), Pair("data", data))
     }
 }
