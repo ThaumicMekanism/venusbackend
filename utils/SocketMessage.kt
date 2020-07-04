@@ -1,6 +1,6 @@
 package venusbackend.utils
 
-data class SocketMessage(var v: String, var cmd: String, var data: String="") {
+data class SocketMessage(var v: String, var cmd: String, var data: String = "") {
     companion object {
         fun parse(data: MutableMap<String, String>): SocketMessage {
             return SocketMessage(
