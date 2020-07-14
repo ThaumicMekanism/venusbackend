@@ -227,10 +227,14 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
                 printViolation("Save register ${getRegNameFromIndex(i.value)} not correctly restored before return! Expected ${toHex(exp)}, Actual ${toHex(act)}.")
             }
         }
+
         if (this.returnOnlya0) {
             val a0Active = currentActiveRegs[Registers.a0]
 //            currentActiveRegs = ActiveRegs.removeLastOrNull() ?: BooleanArray(currentActiveRegs.size)
             currentActiveRegs = ActiveRegs.removeLast()
+            for (reg in callerRegs) {
+                currentActiveRegs[reg] = false
+            }
             currentActiveRegs[Registers.a0] = a0Active
         } else {
             // Generic handler for keeping a registers.
@@ -273,6 +277,11 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         } else {
 //            ActiveRegs.removeLastOrNull() ?: BooleanArray(currentActiveRegs.size)
             ActiveRegs.removeLast()
+        }
+        if (!new) {
+            for (reg in callerRegs) {
+                currentActiveRegs[reg] = false
+            }
         }
         for (i in aRegs.withIndex()) {
             currentActiveRegs[i.value] = aregs[i.index]
