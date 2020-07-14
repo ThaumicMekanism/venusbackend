@@ -46,7 +46,10 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         for (i in calleeRegs) {
             currentSavedRegs[i] = true
         }
+        currentActiveRegs[Registers.a0] = true
+        currentActiveRegs[Registers.a1] = true
         currentActiveRegs[Registers.sp] = true
+        currentActiveRegs[Registers.ra] = true
         while (!sim.isDone()) {
             val inst = sim.getNextInstruction()
             prevPC = sim.getPC()
