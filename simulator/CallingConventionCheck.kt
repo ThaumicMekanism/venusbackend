@@ -5,6 +5,7 @@ import venusbackend.plus
 import venusbackend.riscv.InstructionField
 import venusbackend.riscv.MachineCode
 import venusbackend.riscv.Registers
+import venusbackend.riscv.getRegNameFromIndex
 import venusbackend.riscv.insts.dsl.formats.base.BTypeFormat
 import venusbackend.riscv.insts.dsl.formats.base.ITypeFormat
 import venusbackend.riscv.insts.dsl.formats.base.RTypeFormat
@@ -38,7 +39,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
     var ActiveRegs: MutableList<BooleanArray> = ArrayList()
     var SavedRegs: MutableList<BooleanArray> = ArrayList()
     var returnAddresses: MutableList<Number> = ArrayList()
-    var stackPtr: MutableList<Number> = ArrayList()
+    var SavedRegsValues: MutableList<MutableList<Number>> = ArrayList()
     var prevPC = sim.getPC()
 
     fun run(): Int {
@@ -119,22 +120,6 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
         return returnAddresses.removeLastOrNull()
     }
 
-    fun getStackPtr(): Number? {
-        if (stackPtr.lastIndex == -1) {
-            return null
-        }
-        return stackPtr[stackPtr.lastIndex]
-    }
-
-    fun addStackPtr(n: Number) {
-        stackPtr.add(n)
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    fun popStackPtr(): Number? {
-        return stackPtr.removeLastOrNull()
-    }
-
     fun getDbg(): String {
         val idx = sim.invInstOrderMapping[prevPC]!!
         val dbg = sim.linkedProgram.dbg[idx]
@@ -143,9 +128,9 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
 
     fun handleDstRegister(post: RegisterDiff, mcode: MachineCode) {
         // We have an error if we are not x0, we are a save (callee) register and we have not see some 'save' action.
-        if (post.id != 0 && post.id in calleeRegs && !currentSavedRegs[post.id]) {
+        if (post.id != 0 && post.id in sRegs && !currentSavedRegs[post.id]) {
             errorCnt++
-            Renderer.displayError("[CC Warning]: Setting of a saved register which has not been saved! x${post.id} detected at PC=${toHex(prevPC)}. ${getDbg()}")
+            Renderer.displayError("[CC Warning]: Setting of a saved register which has not been saved! ${getRegNameFromIndex(post.id)} detected at PC=${toHex(prevPC)}. ${getDbg()}")
         }
 //        if (isMV(post, mcode)) {
 //            currentSavedRegs[mcode[InstructionField.RD]] = true
@@ -158,7 +143,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
         for (reg in srcRegs) {
             if (reg != 0 && (!currentActiveRegs[reg])) {
                 errorCnt++
-                Renderer.displayError("[CC Warning]: Usage of unset register x$reg detected at PC=${toHex(prevPC)}! ${getDbg()}")
+                Renderer.displayError("[CC Warning]: Usage of unset register ${getRegNameFromIndex(reg)} detected at PC=${toHex(prevPC)}! ${getDbg()}")
             }
         }
     }
@@ -230,6 +215,15 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
 
     @OptIn(ExperimentalStdlibApi::class)
     fun handleReturn() {
+        val a = SavedRegsValues.removeLast()
+        for (i in calleeRegs.withIndex()) {
+            val exp = a[i.index]
+            val act = sim.getReg(i.value)
+            if (exp != act) {
+                errorCnt++
+                Renderer.displayError("[CC Warning]: Save register ${getRegNameFromIndex(i.value)} not correctly restored before return at PC=${toHex(prevPC)}! Expected ${toHex(exp)}, Actual ${toHex(act)} ${getDbg()}")
+            }
+        }
         if (this.returnOnlya0) {
             val a0Active = currentActiveRegs[Registers.a0]
 //            currentActiveRegs = ActiveRegs.removeLastOrNull() ?: BooleanArray(currentActiveRegs.size)
@@ -243,18 +237,23 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
         currentSavedRegs = SavedRegs.removeLast()
 
 
-        val esp = popStackPtr()
-        val asp = sim.getReg(Registers.sp)
-        if (esp != asp) {
-            errorCnt++
-            Renderer.displayError("[CC Warning]: Stack pointer not correctly restored at PC=${toHex(prevPC)}! ${getDbg()}")
-        }
+//        val esp = popStackPtr()
+//        val asp = sim.getReg(Registers.sp)
+//        if (esp != asp) {
+//            errorCnt++
+//            Renderer.displayError("[CC Warning]: Stack pointer not correctly restored at PC=${toHex(prevPC)}! ${getDbg()}")
+//        }
         popRetAddr()
     }
 
     fun handleCall(nextPC: Number) {
+        val a = ArrayList<Number>()
+        SavedRegsValues.add(a)
+        for (i in calleeRegs) {
+            a.add(sim.getReg(i))
+        }
         addRetAddr(nextPC)
-        addStackPtr(sim.getReg(Registers.sp))
+//        addStackPtr(sim.getReg(Registers.sp))
         ActiveRegs.add(currentActiveRegs)
         SavedRegs.add(currentSavedRegs)
         copyOverARegs(true)
@@ -287,8 +286,8 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
     }
 
     fun getCalleeSavedRegisters(): List<Int> {
-//        val calleeSaveRegisters: ArrayList<Int> = arrayListOf(Registers.sp)
-        val calleeSaveRegisters: ArrayList<Int> = arrayListOf()
+        val calleeSaveRegisters: ArrayList<Int> = arrayListOf(Registers.sp)
+//        val calleeSaveRegisters: ArrayList<Int> = arrayListOf()
         calleeSaveRegisters.addAll(getsRegs())
         return calleeSaveRegisters
     }
