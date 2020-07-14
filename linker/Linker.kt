@@ -66,6 +66,8 @@ object Linker {
                 val location = start + offset
 
                 if (prog.isGlobalLabel(label)) {
+                    linkedProgram.prog.addLabel(label, location)
+                    linkedProgram.prog.makeLabelGlobal(label)
                     val previousValue = globalTable.put(label, location)
                     if (previousValue != null) {
                         throw AssemblerError("label $label defined global in two different files")

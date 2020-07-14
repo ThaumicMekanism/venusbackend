@@ -17,18 +17,18 @@ import kotlin.math.max
 
 /** Right now, this is a loose wrapper around SimulatorState
     Eventually, it will support debugging. */
-class Simulator(
-    val linkedProgram: LinkedProgram,
-    val VFS: VirtualFileSystem = VirtualFileSystem("dummy"),
-    var settings: SimulatorSettings = SimulatorSettings(),
-    val state: SimulatorState = SimulatorState32(),
-    val simulatorID: Int = 0
+open class Simulator(
+        open val linkedProgram: LinkedProgram,
+        open val VFS: VirtualFileSystem = VirtualFileSystem("dummy"),
+        open var settings: SimulatorSettings = SimulatorSettings(),
+        open val state: SimulatorState = SimulatorState32(),
+        open val simulatorID: Int = 0
 ) {
 
     private var cycles = 0
-    private val history = History(settings.max_histroy)
-    private val preInstruction = ArrayList<Diff>()
-    private val postInstruction = ArrayList<Diff>()
+    val history = History(settings.max_histroy)
+    val preInstruction = ArrayList<Diff>()
+    val postInstruction = ArrayList<Diff>()
 //    private val breakpoints: Array<Boolean>
     private val breakpoints = HashSet<Int>()
     var args = ArrayList<String>()
@@ -98,6 +98,10 @@ class Simulator(
         return cycles
     }
 
+    fun setCycles(c: Int) {
+        cycles = c
+    }
+
     fun getMaxPC(): Number {
         return state.getMaxPC()
     }
@@ -131,7 +135,7 @@ class Simulator(
         }
     }
 
-    fun step(): List<Diff> {
+    open fun step(): List<Diff> {
         if (settings.maxSteps >= 0 && cycles >= settings.maxSteps) {
             throw ExceededAllowedCyclesError("Ran for more than the max allowed steps (${settings.maxSteps})!")
         }

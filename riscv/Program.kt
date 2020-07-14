@@ -237,6 +237,18 @@ class Program(var name: String = "anonymous", val absPath: String) {
      */
     fun isGlobalLabel(label: String) = globalLabels.contains(label)
 
+    /**
+     * checks if address is of a global label
+     */
+    fun isAddrGlobalLabel(addr: Number): Boolean {
+        for (label in this.globalLabels) {
+            if (addr == this.labels[label]) {
+                return true
+            }
+        }
+        return false
+    }
+
     /* TODO: add dump formats */
     /**
      * Dumps the instructions.
