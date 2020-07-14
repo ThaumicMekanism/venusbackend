@@ -109,6 +109,10 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         Renderer.displayError("[CC Violation]: (PC=${toHex(prevPC)}) $s ${getDbg()}")
     }
 
+    fun printWarning(s: String) {
+        Renderer.displayWarning("[CC Warning]: (PC=${toHex(prevPC)}) $s ${getDbg()}")
+    }
+
     fun getRetAddr(): Number? {
         if (returnAddresses.lastIndex == -1) {
             return null
@@ -137,6 +141,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
             printViolation("Setting of a saved register (${getRegNameFromIndex(post.id)}) which has not been saved!")
         }
 //        if (isMV(post, mcode)) {
+//            printWarning("Detected move/copy of a save register ${getRegNameFromIndex(post.id)} to another register! Will treat it as being saved. You should be using the stack to save these registers.")
 //            currentSavedRegs[mcode[InstructionField.RD]] = true
 //        }
         currentActiveRegs[mcode[InstructionField.RD]] = true
@@ -187,26 +192,27 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     }
 
     // Currently dont wanna support move. Too difficult
-//    fun isMV(pre: RegisterDiff, post: RegisterDiff, mcode: MachineCode): Boolean {
-//        val srcRegs = getSourceRegs(mcode)
-//        when(srcRegs.size) {
-//            0 -> {
-//                return false
-//            }
-//            1 -> {
-//                return s
-//            }
-//            2 -> {
-//                if (srcRegs[0] == 0) {
-//                    return srcRegs[1]
-//                } else if (srcRegs[1] == 0) {
-//
-//                } else {
-//                    return false
-//                }
-//            }
-//        }
-//    }
+    fun isMV(post: RegisterDiff, mcode: MachineCode): Boolean {
+        val srcRegs = getSourceRegs(mcode)
+        when (srcRegs.size) {
+            0 -> {
+                return false
+            }
+            1 -> {
+                return post.v == sim.getReg(srcRegs[0])
+            }
+            2 -> {
+                if (srcRegs[0] == 0 && srcRegs[1] in sRegs) {
+                    return post.v == sim.getReg(srcRegs[1])
+                } else if (srcRegs[1] == 0 && srcRegs[0] in sRegs) {
+                    return post.v == sim.getReg(srcRegs[0])
+                } else {
+                    return false
+                }
+            }
+        }
+        return false
+    }
 
     @OptIn(ExperimentalStdlibApi::class)
     fun handleReturn() {
