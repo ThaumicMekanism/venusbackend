@@ -71,7 +71,7 @@ object Registers {
 
 fun getRegNameFromIndex(regid: Int, integer: Boolean = true): String {
     if (integer) {
-        return when(regid) {
+        return when (regid) {
             0 -> "zero"
             1 -> "ra"
             2 -> "sp"

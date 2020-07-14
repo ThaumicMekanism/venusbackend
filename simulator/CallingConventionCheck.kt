@@ -22,7 +22,7 @@ import venusbackend.toHex
 
 data class StateChange(val pre: Diff, val post: Diff)
 
-class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = false) {
+class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = false) {
     var errorCnt = 0
 
     var callerRegs = getCallerSavedRegisters()
@@ -47,7 +47,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
             currentSavedRegs[i] = true
         }
         currentActiveRegs[Registers.sp] = true
-        while(!sim.isDone()) {
+        while (!sim.isDone()) {
             val inst = sim.getNextInstruction()
             prevPC = sim.getPC()
             sim.step()
@@ -154,14 +154,10 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
     fun getSourceRegs(mcode: MachineCode): List<Int> {
         val regs = ArrayList<Int>()
         val inst = Instruction[mcode]
-        if (inst.format is RTypeFormat
-                || inst.format is ITypeFormat
-                || inst.format is STypeFormat
-                || inst.format is BTypeFormat) {
+        if (inst.format is RTypeFormat || inst.format is ITypeFormat || inst.format is STypeFormat || inst.format is BTypeFormat) {
             regs.add(mcode[InstructionField.RS1])
         }
-        if (inst.format is RTypeFormat
-                || inst.format is BTypeFormat) {
+        if (inst.format is RTypeFormat || inst.format is BTypeFormat) {
             regs.add(mcode[InstructionField.RS2])
         }
         return regs
@@ -170,10 +166,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
     fun isReturn(mcode: MachineCode, newPCDiff: PCDiff): Boolean {
         val inst = Instruction[mcode]
         return if (inst.name == jalr.name) {
-            mcode[InstructionField.RD] == Registers.zero
-                    && mcode[InstructionField.RS1] == Registers.ra
-                    && signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12) == 0
-                    && newPCDiff.pc == getRetAddr()
+            mcode[InstructionField.RD] == Registers.zero && mcode[InstructionField.RS1] == Registers.ra && signExtend(mcode[InstructionField.IMM_11_0].toInt(), 12) == 0 && newPCDiff.pc == getRetAddr()
         } else {
             false
         }
@@ -215,7 +208,6 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
 //        }
 //    }
 
-
     @OptIn(ExperimentalStdlibApi::class)
     fun handleReturn() {
         val a = SavedRegsValues.removeLast()
@@ -237,8 +229,6 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
         }
 //        currentSavedRegs = SavedRegs.removeLastOrNull() ?: BooleanArray(currentSavedRegs.size)
         currentSavedRegs = SavedRegs.removeLast()
-
-
 //        val esp = popStackPtr()
 //        val asp = sim.getReg(Registers.sp)
 //        if (esp != asp) {

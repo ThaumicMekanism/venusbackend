@@ -18,11 +18,11 @@ import kotlin.math.max
 /** Right now, this is a loose wrapper around SimulatorState
     Eventually, it will support debugging. */
 open class Simulator(
-        open val linkedProgram: LinkedProgram,
-        open val VFS: VirtualFileSystem = VirtualFileSystem("dummy"),
-        open var settings: SimulatorSettings = SimulatorSettings(),
-        open val state: SimulatorState = SimulatorState32(),
-        open val simulatorID: Int = 0
+    open val linkedProgram: LinkedProgram,
+    open val VFS: VirtualFileSystem = VirtualFileSystem("dummy"),
+    open var settings: SimulatorSettings = SimulatorSettings(),
+    open val state: SimulatorState = SimulatorState32(),
+    open val simulatorID: Int = 0
 ) {
 
     private var cycles = 0
