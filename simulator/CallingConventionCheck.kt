@@ -104,6 +104,11 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
         return errorCnt
     }
 
+    fun printViolation(s: String) {
+        errorCnt++
+        Renderer.displayError("[CC Violation]: (PC=${toHex(prevPC)}) $s ${getDbg()}")
+    }
+
     fun getRetAddr(): Number? {
         if (returnAddresses.lastIndex == -1) {
             return null
@@ -129,8 +134,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
     fun handleDstRegister(post: RegisterDiff, mcode: MachineCode) {
         // We have an error if we are not x0, we are a save (callee) register and we have not see some 'save' action.
         if (post.id != 0 && post.id in sRegs && !currentSavedRegs[post.id]) {
-            errorCnt++
-            Renderer.displayError("[CC Warning]: Setting of a saved register which has not been saved! ${getRegNameFromIndex(post.id)} detected at PC=${toHex(prevPC)}. ${getDbg()}")
+            printViolation("Setting of a saved register (${getRegNameFromIndex(post.id)}) which has not been saved!")
         }
 //        if (isMV(post, mcode)) {
 //            currentSavedRegs[mcode[InstructionField.RD]] = true
@@ -142,8 +146,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
         val srcRegs = getSourceRegs(mcode)
         for (reg in srcRegs) {
             if (reg != 0 && (!currentActiveRegs[reg])) {
-                errorCnt++
-                Renderer.displayError("[CC Warning]: Usage of unset register ${getRegNameFromIndex(reg)} detected at PC=${toHex(prevPC)}! ${getDbg()}")
+                printViolation("Usage of unset register ${getRegNameFromIndex(reg)}!")
             }
         }
     }
@@ -220,8 +223,7 @@ class CallingConventionCheck (val sim: Simulator, val returnOnlya0: Boolean = fa
             val exp = a[i.index]
             val act = sim.getReg(i.value)
             if (exp != act) {
-                errorCnt++
-                Renderer.displayError("[CC Warning]: Save register ${getRegNameFromIndex(i.value)} not correctly restored before return at PC=${toHex(prevPC)}! Expected ${toHex(exp)}, Actual ${toHex(act)} ${getDbg()}")
+                printViolation("Save register ${getRegNameFromIndex(i.value)} not correctly restored before return! Expected ${toHex(exp)}, Actual ${toHex(act)}.")
             }
         }
         if (this.returnOnlya0) {
