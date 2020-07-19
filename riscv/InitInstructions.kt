@@ -20,6 +20,8 @@ import venusbackend.riscv.insts.integer.extensions.atomic.r.*
 import venusbackend.riscv.insts.integer.extensions.compressed.ca.*
 import venusbackend.riscv.insts.integer.extensions.compressed.cr.*
 import venusbackend.riscv.insts.integer.extensions.multiply.r.*
+import venusbackend.riscv.insts.integer.extensions.proj3.swlt
+
 /* ktlint-enable no-wildcard-imports */
 
 class InitInstructions {
@@ -170,6 +172,7 @@ class InitInstructions {
             cadd
             cebreak
             cmv
+            swlt
             inited = true
         }
     }
