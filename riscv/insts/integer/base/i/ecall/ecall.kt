@@ -139,11 +139,13 @@ private fun getParamsJson(id: Int, sim: Simulator): Json {
 }
 
 private fun createJson(id: Int, name: String, params: Json): String {
-    return json(
+    val data = json(
         "id" to id,
         "name" to name,
         "params" to params
-    ).toString()
+    )
+
+    return JSON.stringify(data)
 }
 
 private fun findNameBySyscall(syscall: Int): String {
