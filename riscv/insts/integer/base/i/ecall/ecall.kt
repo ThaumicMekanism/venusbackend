@@ -17,6 +17,9 @@ import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
 import venusbackend.riscv.MemorySegments
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
+import kotlin.js.JSON
+import kotlin.js.Json
+import kotlin.js.json
 
 val ecall = Instruction(
     // Fixme The long and quadword are only build for a 32 bit system!
@@ -47,6 +50,7 @@ val ecall = Instruction(
                 0x3CC -> clib(sim)
                 else -> Renderer.printConsole("Invalid ecall $whichCall")
             }
+            sendECallJson(whichCall.toInt(), sim)
             if (!(whichCall == 10 || whichCall == 17)) {
                 sim.incrementPC(mcode.length)
             }
@@ -69,8 +73,10 @@ val ecall = Instruction(
                 19L -> feof(sim)
                 20L -> ferror(sim)
                 34L -> printHex(sim)
+
                 else -> Renderer.printConsole("Invalid ecall $whichCall")
             }
+            sendECallJson(whichCall.toInt(), sim)
             if (!(whichCall == 10L || whichCall == 17L)) {
                 sim.incrementPC(mcode.length)
             }
@@ -95,6 +101,7 @@ val ecall = Instruction(
                 QuadWord(34) -> printHex(sim)
                 else -> Renderer.printConsole("Invalid ecall $whichCall")
             }
+            sendECallJson(whichCall.toInt(), sim)
             if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17))) {
                 sim.incrementPC(mcode.length)
             }
@@ -118,6 +125,30 @@ enum class Syscall(val syscall: Int) {
     FEOF(19),
     FERROR(20),
     PRINT_HEX(34)
+}
+
+private fun sendECallJson(id: Int, sim: Simulator) {
+    sim.sendECallJson(createJson(id, findNameBySyscall(id), getParamsJson(id, sim)))
+}
+
+private fun getParamsJson(id: Int, sim: Simulator): Json {
+    when (id) {
+        1 -> return json("integer" to sim.getReg(11))
+        else -> return json()
+    }
+}
+
+private fun createJson(id: Int, name: String, params: Json): String {
+    return json(
+        "id" to id,
+        "name" to name,
+        "params" to params
+    ).toString()
+}
+
+private fun findNameBySyscall(syscall: Int): String {
+    val name = Syscall.values().find { it.syscall == syscall }
+    return name?.toString() ?: ""
 }
 
 // All file operations will return -1 if the file descriptor is not found.
