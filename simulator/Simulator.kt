@@ -43,6 +43,7 @@ open class Simulator(
     val alloc: Alloc = Alloc(this)
 
     val plugins = LinkedHashMap<String, SimulatorPlugin>()
+    val ECallReceiver = ArrayList<(Int) -> Boolean>()
 
     init {
         (state).getReg(1)
@@ -103,6 +104,17 @@ open class Simulator(
 
     fun finishPlugins() {
         plugins.values.forEach { it.finish(this) }
+    }
+
+    fun registerECallReceiver(receiver: (Int) -> Boolean) {
+        ECallReceiver.add(receiver)
+    }
+
+    fun invokeECallReceiver(id: Int): Boolean {
+        ECallReceiver.forEach {
+            e -> e.invoke(id)
+        }
+        return true
     }
 
     fun setHistoryLimit(limit: Int) {

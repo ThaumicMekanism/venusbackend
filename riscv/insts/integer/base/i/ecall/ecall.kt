@@ -17,6 +17,9 @@ import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
 import venusbackend.riscv.MemorySegments
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
+import kotlin.js.JSON
+import kotlin.js.Json
+import kotlin.js.json
 
 val ecall = Instruction(
     // Fixme The long and quadword are only build for a 32 bit system!
@@ -45,7 +48,7 @@ val ecall = Instruction(
                 20 -> ferror(sim)
                 34 -> printHex(sim)
                 0x3CC -> clib(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> invokeECall(whichCall.toInt(), sim)
             }
             if (!(whichCall == 10 || whichCall == 17)) {
                 sim.incrementPC(mcode.length)
@@ -69,7 +72,7 @@ val ecall = Instruction(
                 19L -> feof(sim)
                 20L -> ferror(sim)
                 34L -> printHex(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> invokeECall(whichCall.toInt(), sim)
             }
             if (!(whichCall == 10L || whichCall == 17L)) {
                 sim.incrementPC(mcode.length)
@@ -93,7 +96,7 @@ val ecall = Instruction(
                 QuadWord(19) -> feof(sim)
                 QuadWord(20) -> ferror(sim)
                 QuadWord(34) -> printHex(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> invokeECall(whichCall.toInt(), sim)
             }
             if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17))) {
                 sim.incrementPC(mcode.length)
@@ -119,6 +122,11 @@ enum class Syscall(val syscall: Int) {
     FERROR(20),
     PRINT_HEX(34)
 }
+
+private fun invokeECall(id: Int, sim: Simulator) {
+    if (!sim.invokeECallReceiver(id)) Renderer.printConsole("Invalid ecall $id")
+}
+
 
 // All file operations will return -1 if the file descriptor is not found.
 private fun openFile(sim: Simulator) {
