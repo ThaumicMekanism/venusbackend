@@ -354,7 +354,7 @@ open class Simulator(
         }
 //        return ebreak || breakpoints[inst]
 //        return ebreak || breakpoints.contains(location.toInt())
-        return ebreak xor breakpoints.contains(location.toInt() - 4)
+        return ebreak xor breakpoints.contains(location.toInt())
     }
 
     fun getPC() = state.getPC()
