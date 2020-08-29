@@ -344,6 +344,10 @@ open class Simulator(
         }
     }
 
+    fun setBreakBeforeInstruction(set: Boolean) {
+        settings.breakBeforeInstruction = set;
+    }
+
     /* TODO Make this more efficient while robust! */
     fun atBreakpoint(): Boolean {
         val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
@@ -354,7 +358,11 @@ open class Simulator(
         }
 //        return ebreak || breakpoints[inst]
 //        return ebreak || breakpoints.contains(location.toInt())
-        return ebreak xor breakpoints.contains(location.toInt())
+        if (settings.breakBeforeInstruction) {
+            return ebreak xor breakpoints.contains(location.toInt())
+        } else {
+            return ebreak xor breakpoints.contains(location.toInt() - 4)
+        }
     }
 
     fun getPC() = state.getPC()
