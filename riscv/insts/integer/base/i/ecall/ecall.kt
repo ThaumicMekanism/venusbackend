@@ -46,11 +46,15 @@ val ecall = Instruction(
                 19 -> feof(sim)
                 20 -> ferror(sim)
                 34 -> printHex(sim)
-                50 -> setLED(sim)
                 0x3CC -> clib(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> {
+                    if (sim.hasEcallReceiver()) {
+                        sendECallJson(whichCall.toInt(), sim)
+                    } else {
+                        Renderer.printConsole("Invalid ecall $whichCall")
+                    }
+                }
             }
-            sendECallJson(whichCall.toInt(), sim)
             if (!(whichCall == 10 || whichCall == 17)) {
                 sim.incrementPC(mcode.length)
             }
@@ -73,7 +77,6 @@ val ecall = Instruction(
                 19L -> feof(sim)
                 20L -> ferror(sim)
                 34L -> printHex(sim)
-                50L -> setLED(sim)
                 else -> Renderer.printConsole("Invalid ecall $whichCall")
             }
             sendECallJson(whichCall.toInt(), sim)
@@ -124,52 +127,33 @@ enum class Syscall(val syscall: Int) {
     FLUSH(18),
     FEOF(19),
     FERROR(20),
-    PRINT_HEX(34),
-    SET_LED(50)
+    PRINT_HEX(34)
 }
 
 private fun sendECallJson(id: Int, sim: Simulator) {
-    sim.sendECallJson(createJson(id, findNameBySyscall(id), getParamsJson(id, sim)))
+    sim.sendECallJson(createJson(id, getParamsJson(id, sim)))
 }
 
 private fun getParamsJson(id: Int, sim: Simulator): Json {
-    when (id) {
-        1 -> return json("integer" to sim.getReg(11))
-        50 -> {
-            // We need to divide here because shift functions are 32 bits only in javascript
-            val x = sim.getReg(11) ushr 16 and 0x0000FFFF
-            val y = sim.getReg(11) and 0x0000FFFF
-            val r = sim.getReg(12) ushr 16 and 0x000000FF
-            val g = sim.getReg(12) ushr 8 and 0x000000FF
-            val b = sim.getReg(12) and 0x000000FF
-            return json("x" to x,
-                        "y" to y,
-                        "red" to r,
-                        "green" to g,
-                        "blue" to b
-            )
-        }
-        else -> return json()
-    }
+    return json(
+        "a0" to id,
+        "a1" to sim.getReg(11),
+        "a2" to sim.getReg(12),
+        "a3" to sim.getReg(13),
+        "a4" to sim.getReg(14),
+        "a5" to sim.getReg(15),
+        "a6" to sim.getReg(16),
+        "a7" to sim.getReg(17)
+    )
 }
 
-private fun createJson(id: Int, name: String, params: Json): String {
+private fun createJson(id: Int, params: Json): String {
     val data = json(
         "id" to id,
-        "name" to name,
         "params" to params
     )
 
     return JSON.stringify(data)
-}
-
-private fun findNameBySyscall(syscall: Int): String {
-    val name = Syscall.values().find { it.syscall == syscall }
-    return name?.toString() ?: ""
-}
-
-private fun setLED(sim:Simulator) {
-
 }
 
 // All file operations will return -1 if the file descriptor is not found.
