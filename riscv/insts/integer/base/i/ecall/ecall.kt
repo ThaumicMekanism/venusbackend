@@ -131,7 +131,16 @@ enum class Syscall(val syscall: Int) {
 }
 
 private fun sendECallJson(id: Int, sim: Simulator) {
-    sim.sendECallJson(createJson(id, getParamsJson(id, sim)))
+    val jsonstr = sim.sendECallJson(createJson(id, getParamsJson(id, sim)))
+    if (jsonstr != null) {
+        val jsonobj: Json = JSON.parse(jsonstr)
+
+        val a0: Any? = jsonobj.get("a0")
+        val a1: Any? = jsonobj.get("a1")
+
+        if (a0 is Int) sim.setReg(10, a0)
+        if (a1 is Int) sim.setReg(11, a1)
+    }
 }
 
 private fun getParamsJson(id: Int, sim: Simulator): Json {
