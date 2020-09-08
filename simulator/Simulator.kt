@@ -119,8 +119,13 @@ open class Simulator(
         state.mem = mem
     }
 
-    fun run() {
+    fun run(plugins: List<IsSimulatorPlugin>) {
         while (!isDone()) {
+            if(!plugins.isEmpty()) {
+                val inst = getNextInstruction()
+                val prevPC = getPC()
+                plugins.forEach { it.onStep(inst, prevPC) }
+            }
             step()
         }
     }
