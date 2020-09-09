@@ -22,7 +22,7 @@ import venusbackend.toHex
 
 data class StateChange(val pre: Diff, val post: Diff)
 
-class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = false) {
+class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = false) : SimulatorPlugin {
     var errorCnt = 0
 
     var callerRegs = getCallerSavedRegisters()
@@ -42,7 +42,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     var SavedRegsValues: MutableList<MutableList<Number>> = ArrayList()
     var prevPC = sim.getPC()
 
-    fun run(): Int {
+    init {
         for (i in calleeRegs) {
             currentSavedRegs[i] = true
         }
@@ -50,59 +50,60 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         currentActiveRegs[Registers.a1] = true
         currentActiveRegs[Registers.sp] = true
         currentActiveRegs[Registers.ra] = true
-        while (!sim.isDone()) {
-            val inst = sim.getNextInstruction()
-            prevPC = sim.getPC()
-            sim.step()
-            val pre = ArrayList<Diff>()
-            for (d in sim.preInstruction) {
-                if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
-                    pre.add(d)
-                }
-            }
-            val post = ArrayList<Diff>()
-            for (d in sim.postInstruction) {
-                if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
-                    post.add(d)
-                }
-            }
-            val pcStateChange: ArrayList<StateChange> = ArrayList()
-            val regStateChange: ArrayList<StateChange> = ArrayList()
-            val memStateChange: ArrayList<StateChange> = ArrayList()
-            for ((pre, post) in pre.zip(post)) {
-                if (pre is RegisterDiff) {
-                    regStateChange.add(StateChange(pre, post))
-                } else if (pre is MemoryDiff) {
-                    memStateChange.add(StateChange(pre, post))
-                } else if (pre is PCDiff) {
-                    pcStateChange.add(StateChange(pre, post))
-                }
-            }
-            handleSourceRegisters(inst)
-            for (pcSC in pcStateChange) {
-                val pre = pcSC.pre as PCDiff
-                val post = pcSC.post as PCDiff
-                if (isReturn(inst, post)) {
-                    handleReturn()
-                }
-                if (isCall(pre, post, inst)) {
-                    handleCall(pre.pc + inst.length)
-                }
-            }
-            for (regSC in regStateChange) {
-                val pre = regSC.pre as RegisterDiff
-                val post = regSC.post as RegisterDiff
-                handleDstRegister(post, inst)
-            }
-            for (memSC in memStateChange) {
-                val pre = memSC.pre as MemoryDiff
-                val post = memSC.post as MemoryDiff
-                if (isSave(inst)) {
-                    val reg = inst[InstructionField.RS2]
-                    currentSavedRegs[reg] = true
-                }
+    }
+
+    override fun onStep(inst: MachineCode, prevPC: Number) {
+        val pre = ArrayList<Diff>()
+        for (d in sim.preInstruction) {
+            if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
+                pre.add(d)
             }
         }
+        val post = ArrayList<Diff>()
+        for (d in sim.postInstruction) {
+            if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
+                post.add(d)
+            }
+        }
+        val pcStateChange: ArrayList<StateChange> = ArrayList()
+        val regStateChange: ArrayList<StateChange> = ArrayList()
+        val memStateChange: ArrayList<StateChange> = ArrayList()
+        for ((pre, post) in pre.zip(post)) {
+            if (pre is RegisterDiff) {
+                regStateChange.add(StateChange(pre, post))
+            } else if (pre is MemoryDiff) {
+                memStateChange.add(StateChange(pre, post))
+            } else if (pre is PCDiff) {
+                pcStateChange.add(StateChange(pre, post))
+            }
+        }
+        handleSourceRegisters(inst)
+        for (pcSC in pcStateChange) {
+            val pre = pcSC.pre as PCDiff
+            val post = pcSC.post as PCDiff
+            if (isReturn(inst, post)) {
+                handleReturn()
+            }
+            if (isCall(pre, post, inst)) {
+                handleCall(pre.pc + inst.length)
+            }
+        }
+        for (regSC in regStateChange) {
+            val pre = regSC.pre as RegisterDiff
+            val post = regSC.post as RegisterDiff
+            handleDstRegister(post, inst)
+        }
+        for (memSC in memStateChange) {
+            val pre = memSC.pre as MemoryDiff
+            val post = memSC.post as MemoryDiff
+            if (isSave(inst)) {
+                val reg = inst[InstructionField.RS2]
+                currentSavedRegs[reg] = true
+            }
+        }
+    }
+
+    fun finish(): Int {
         Renderer.printConsole("Found $errorCnt warnings!")
         return errorCnt
     }
