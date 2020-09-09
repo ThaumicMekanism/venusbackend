@@ -135,13 +135,15 @@ open class Simulator(
         }
     }
 
-    open fun step(plugins: List<SimulatorPlugin> = emptyList()): List<Diff> {
-        if(plugins.isNotEmpty()) {
-            val inst = getNextInstruction()
-            val prevPC = getPC()
-            plugins.forEach { it.onStep(inst, prevPC) }
-        }
+    open fun step(plugins: List<SimulatorPlugin>): List<Diff> {
+        val inst = getNextInstruction()
+        val prevPC = getPC()
+        val diffs = step()
+        plugins.forEach { it.onStep(inst, prevPC) }
+        return diffs
+    }
 
+    open fun step(): List<Diff> {
         if (settings.maxSteps >= 0 && cycles >= settings.maxSteps) {
             throw ExceededAllowedCyclesError("Ran for more than the max allowed steps (${settings.maxSteps})!")
         }
