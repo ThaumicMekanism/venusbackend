@@ -119,28 +119,29 @@ open class Simulator(
         state.mem = mem
     }
 
-    fun run(plugins: List<IsSimulatorPlugin>) {
+    fun run(plugins: List<IsSimulatorPlugin> = emptyList()) {
         while (!isDone()) {
-            if(!plugins.isEmpty()) {
-                val inst = getNextInstruction()
-                val prevPC = getPC()
-                plugins.forEach { it.onStep(inst, prevPC) }
-            }
-            step()
+            step(plugins)
         }
     }
 
-    fun runToBreakpoint() {
+    fun runToBreakpoint(plugins: List<IsSimulatorPlugin> = emptyList()) {
         if (!isDone()) {
             // We need to step past a breakpoint.
-            step()
+            step(plugins)
         }
         while (!isDone() && !atBreakpoint()) {
-            step()
+            step(plugins)
         }
     }
 
-    open fun step(): List<Diff> {
+    open fun step(plugins: List<IsSimulatorPlugin> = emptyList()): List<Diff> {
+        if(plugins.isNotEmpty()) {
+            val inst = getNextInstruction()
+            val prevPC = getPC()
+            plugins.forEach { it.onStep(inst, prevPC) }
+        }
+
         if (settings.maxSteps >= 0 && cycles >= settings.maxSteps) {
             throw ExceededAllowedCyclesError("Ran for more than the max allowed steps (${settings.maxSteps})!")
         }
