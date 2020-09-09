@@ -104,7 +104,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     }
 
     fun finish(): Int {
-        Renderer.printConsole("Found $errorCnt warnings!")
+        Renderer.displayError("Found $errorCnt warnings!")
         return errorCnt
     }
 
