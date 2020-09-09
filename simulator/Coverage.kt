@@ -4,7 +4,7 @@ import venusbackend.linker.ProgramDebugInfo
 import venusbackend.riscv.MachineCode
 import venusbackend.toHex
 
-class Coverage(private val sim: Simulator) : IsSimulatorPlugin {
+class Coverage(private val sim: Simulator) : SimulatorPlugin {
 
     private val pcCount = mutableMapOf<Number, Int>()
 

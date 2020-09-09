@@ -119,13 +119,13 @@ open class Simulator(
         state.mem = mem
     }
 
-    fun run(plugins: List<IsSimulatorPlugin> = emptyList()) {
+    fun run(plugins: List<SimulatorPlugin> = emptyList()) {
         while (!isDone()) {
             step(plugins)
         }
     }
 
-    fun runToBreakpoint(plugins: List<IsSimulatorPlugin> = emptyList()) {
+    fun runToBreakpoint(plugins: List<SimulatorPlugin> = emptyList()) {
         if (!isDone()) {
             // We need to step past a breakpoint.
             step(plugins)
@@ -135,7 +135,7 @@ open class Simulator(
         }
     }
 
-    open fun step(plugins: List<IsSimulatorPlugin> = emptyList()): List<Diff> {
+    open fun step(plugins: List<SimulatorPlugin> = emptyList()): List<Diff> {
         if(plugins.isNotEmpty()) {
             val inst = getNextInstruction()
             val prevPC = getPC()

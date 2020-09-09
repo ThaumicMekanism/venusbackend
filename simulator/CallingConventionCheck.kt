@@ -22,7 +22,7 @@ import venusbackend.toHex
 
 data class StateChange(val pre: Diff, val post: Diff)
 
-class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = false) : IsSimulatorPlugin {
+class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = false) : SimulatorPlugin {
     var errorCnt = 0
 
     var callerRegs = getCallerSavedRegisters()
