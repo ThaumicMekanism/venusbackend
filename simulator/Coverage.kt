@@ -9,7 +9,7 @@ class Coverage(private val sim: Simulator) : SimulatorPlugin {
     private val pcCount = mutableMapOf<Number, Int>()
 
     override fun onStep(inst: MachineCode, prevPC: Number) {
-        val newCount = pcCount.getOrDefault(prevPC, 0) + 1
+        val newCount = (pcCount[prevPC] ?: 0) + 1
         pcCount[prevPC] = newCount
     }
 
@@ -23,7 +23,7 @@ class Coverage(private val sim: Simulator) : SimulatorPlugin {
 
         val lines = allLocations.withIndex().map { (idx, loc) ->
             val pc = instructionIndexToPc(idx)
-            val count = locationToCount.getOrDefault(loc, 0)
+            val count = (locationToCount[loc] ?: 0)
             "${toHex(pc)} $loc $count"
         }
 
