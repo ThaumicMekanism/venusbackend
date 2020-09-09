@@ -3,23 +3,18 @@ package venusbackend.simulator
 import venusbackend.linker.ProgramDebugInfo
 import venusbackend.riscv.MachineCode
 import venusbackend.toHex
-import java.io.File
 
-class Coverage(private val sim: Simulator, private val outputFile: String) : IsSimulatorPlugin {
+class Coverage(private val sim: Simulator) : IsSimulatorPlugin {
 
     private val pcCount = mutableMapOf<Number, Int>()
-
-    init {
-        assert(outputFile.isNotBlank()) {"Blank output file for coverage: $outputFile"}
-    }
 
     override fun onStep(inst: MachineCode, prevPC: Number) {
         val newCount = pcCount.getOrDefault(prevPC, 0) + 1
         pcCount[prevPC] = newCount
     }
 
-    /** saves the coverage to the coverage file */
-    fun finish() {
+    /** returns coverage lines */
+    fun finish(): List<String> {
         // first we find all locations
         val allLocations = sim.linkedProgram.dbg.map { d -> getLocation(d) }
 
@@ -32,9 +27,7 @@ class Coverage(private val sim: Simulator, private val outputFile: String) : IsS
             "${toHex(pc)} $loc $count"
         }
 
-        File(outputFile).bufferedWriter().use { out ->
-            lines.forEach { line -> out.appendln(line) }
-        }
+        return lines
     }
 
     private fun getLocation(dbg: ProgramDebugInfo): String {
