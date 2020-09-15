@@ -53,6 +53,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     }
 
     override fun onStep(inst: MachineCode, prevPC: Number) {
+        this.prevPC = prevPC
         val pre = ArrayList<Diff>()
         for (d in sim.preInstruction) {
             if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
@@ -101,6 +102,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
                 currentSavedRegs[reg] = true
             }
         }
+
     }
 
     fun finish(): Int {
