@@ -102,7 +102,6 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
                 currentSavedRegs[reg] = true
             }
         }
-
     }
 
     fun finish(): Int {
