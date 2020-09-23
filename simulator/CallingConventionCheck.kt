@@ -12,6 +12,7 @@ import venusbackend.riscv.insts.dsl.formats.base.RTypeFormat
 import venusbackend.riscv.insts.dsl.formats.base.STypeFormat
 import venusbackend.riscv.insts.dsl.impls.signExtend
 import venusbackend.riscv.insts.dsl.types.Instruction
+import venusbackend.riscv.insts.dsl.types.base.ShiftImmediateInstruction
 import venusbackend.riscv.insts.integer.base.i.jalr
 import venusbackend.riscv.insts.integer.base.s.sw
 import venusbackend.riscv.insts.integer.base.uj.jal
@@ -167,7 +168,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         if (inst.format is RTypeFormat || inst.format is ITypeFormat || inst.format is STypeFormat || inst.format is BTypeFormat) {
             regs.add(mcode[InstructionField.RS1])
         }
-        if (inst.format is RTypeFormat || inst.format is BTypeFormat) {
+        if ((inst.format is RTypeFormat || inst.format is BTypeFormat) && inst !is ShiftImmediateInstruction) {
             regs.add(mcode[InstructionField.RS2])
         }
         return regs
