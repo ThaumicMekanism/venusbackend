@@ -41,6 +41,8 @@ open class Simulator(
 
     val alloc: Alloc = Alloc(this)
 
+    val plugins = LinkedHashMap<String, SimulatorPlugin>()
+
     init {
         (state).getReg(1)
         var i = 0
@@ -79,6 +81,27 @@ open class Simulator(
         }
 
 //        breakpoints = Array(linkedProgram.prog.insts.size, { false })
+    }
+
+    fun registerPlugin(id: String, plugin: SimulatorPlugin): Boolean {
+        if (id in this.plugins) {
+            return false
+        }
+        plugin.init(this)
+        this.plugins[id] = plugin
+        return true
+    }
+
+    fun removePlugin(id: String): Boolean {
+        if (id in this.plugins) {
+            this.plugins.remove(id)
+            return true
+        }
+        return false
+    }
+
+    fun finishPlugins() {
+        plugins.values.forEach { it.finish(this) }
     }
 
     fun setHistoryLimit(limit: Int) {
@@ -123,6 +146,7 @@ open class Simulator(
         while (!isDone()) {
             step(plugins)
         }
+        finishPlugins()
     }
 
     fun runToBreakpoint(plugins: List<SimulatorPlugin> = emptyList()) {
@@ -139,7 +163,7 @@ open class Simulator(
         val inst = getNextInstruction()
         val prevPC = getPC()
         val diffs = step()
-        plugins.forEach { it.onStep(inst, prevPC) }
+        plugins.forEach { it.onStep(this, inst, prevPC) }
         return diffs
     }
 
@@ -154,6 +178,7 @@ open class Simulator(
         cycles++
         preInstruction.clear()
         postInstruction.clear()
+        val prevPC = getPC()
         val mcode: MachineCode = getNextInstruction()
         try {
             when (state.registerWidth) {
@@ -176,6 +201,7 @@ open class Simulator(
         if (isDone() && exitcode == null) {
             exitcode = state.getReg(Registers.a0).toInt()
         }
+        this.plugins.values.forEach { it.onStep(this, mcode, prevPC) }
         return postInstruction.toList()
     }
 
@@ -299,6 +325,7 @@ open class Simulator(
             addArg(args)
         }
         state.reset()
+        this.plugins.values.forEach { it.reset(this) }
     }
 
     fun trace(): Tracer {

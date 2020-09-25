@@ -4,25 +4,37 @@ import venusbackend.linker.ProgramDebugInfo
 import venusbackend.riscv.MachineCode
 import venusbackend.toHex
 
-class Coverage(private val sim: Simulator) : SimulatorPlugin {
+class Coverage() : SimulatorPlugin {
 
     private val pcCount = mutableMapOf<Number, Int>()
 
-    override fun onStep(inst: MachineCode, prevPC: Number) {
+    override fun reset(sim: Simulator) {
+        pcCount.clear()
+    }
+
+    override fun init(sim: Simulator) {
+        reset(sim)
+    }
+
+    override fun onStep(sim: Simulator, inst: MachineCode, prevPC: Number) {
         val newCount = (pcCount[prevPC] ?: 0) + 1
         pcCount[prevPC] = newCount
     }
 
+    override fun finish(sim: Simulator, any: Any?): Any? {
+        return finish(sim)
+    }
+
     /** returns coverage lines */
-    fun finish(): List<String> {
+    fun finish(sim: Simulator): List<String> {
         // first we find all locations
         val allLocations = sim.linkedProgram.dbg.map { d -> getLocation(d) }
 
         // map location to count + pc
-        val locationToCount = pcCount.map { (pc, count) -> getLocation(pc) to count }.toMap()
+        val locationToCount = pcCount.map { (pc, count) -> getLocation(sim, pc) to count }.toMap()
 
         val lines = allLocations.withIndex().map { (idx, loc) ->
-            val pc = instructionIndexToPc(idx)
+            val pc = instructionIndexToPc(sim, idx)
             val count = (locationToCount[loc] ?: 0)
             "${toHex(pc)} $loc $count"
         }
@@ -34,16 +46,16 @@ class Coverage(private val sim: Simulator) : SimulatorPlugin {
         return "${dbg.programName}:${dbg.dbg.lineNo}"
     }
 
-    private fun getLocation(pc: Number): String {
-        val idx = pcToInstructionIndex(pc)
+    private fun getLocation(sim: Simulator, pc: Number): String {
+        val idx = pcToInstructionIndex(sim, pc)
         val dbg = sim.linkedProgram.dbg[idx]
         return getLocation(dbg)
     }
 
-    private fun pcToInstructionIndex(pc: Number): Int {
+    private fun pcToInstructionIndex(sim: Simulator, pc: Number): Int {
         return sim.invInstOrderMapping[pc]!!
     }
-    private fun instructionIndexToPc(idx: Int): Number {
+    private fun instructionIndexToPc(sim: Simulator, idx: Int): Number {
         return sim.instOrderMapping[idx]!!
     }
 }
