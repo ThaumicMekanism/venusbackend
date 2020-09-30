@@ -408,7 +408,7 @@ open class Simulator(
             if ((addr > heap && addr < sp) ||
                 (upperAddr > heap && upperAddr < sp)) {
                 throw SimulatorError(
-                        "Attempting to access uninitialized memory between the stack and heap. Attempting to access '$bytes' bytes at address '$addr'.",
+                        "Attempting to access uninitialized memory between the stack and heap. Attempting to access '$bytes' bytes at address '${Renderer.toHex(addr)}'.",
                         handled = true)
             }
         }
