@@ -142,11 +142,14 @@ open class Simulator(
         state.mem = mem
     }
 
-    fun run(plugins: List<SimulatorPlugin> = emptyList()) {
+    fun run(plugins: List<SimulatorPlugin> = emptyList(), finishPluginsAfterRun: Boolean = true) {
+        plugins.forEach { it.init(this) }
         while (!isDone()) {
             step(plugins)
         }
-        finishPlugins()
+        if (finishPluginsAfterRun) {
+            finishPlugins()
+        }
     }
 
     fun runToBreakpoint(plugins: List<SimulatorPlugin> = emptyList()) {
