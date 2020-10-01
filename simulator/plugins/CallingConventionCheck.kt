@@ -1,4 +1,4 @@
-package venusbackend.simulator
+package venusbackend.simulator.plugins
 
 import venus.Renderer
 import venusbackend.plus
@@ -16,6 +16,8 @@ import venusbackend.riscv.insts.dsl.types.base.ShiftImmediateInstruction
 import venusbackend.riscv.insts.integer.base.i.jalr
 import venusbackend.riscv.insts.integer.base.s.sw
 import venusbackend.riscv.insts.integer.base.uj.jal
+import venusbackend.simulator.Diff
+import venusbackend.simulator.Simulator
 import venusbackend.simulator.diffs.MemoryDiff
 import venusbackend.simulator.diffs.PCDiff
 import venusbackend.simulator.diffs.RegisterDiff

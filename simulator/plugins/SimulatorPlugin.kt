@@ -1,6 +1,7 @@
-package venusbackend.simulator
+package venusbackend.simulator.plugins
 
 import venusbackend.riscv.MachineCode
+import venusbackend.simulator.Simulator
 
 interface SimulatorPlugin {
     /** called on every step of the simulation (after `sim.step()`) */

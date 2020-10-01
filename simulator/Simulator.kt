@@ -11,6 +11,7 @@ import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.floating.Decimal
 import venusbackend.riscv.insts.integer.base.i.ecall.Alloc
 import venusbackend.simulator.diffs.*
+import venusbackend.simulator.plugins.SimulatorPlugin
 import kotlin.math.max
 
 /* ktlint-enable no-wildcard-imports */

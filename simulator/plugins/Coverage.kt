@@ -1,7 +1,8 @@
-package venusbackend.simulator
+package venusbackend.simulator.plugins
 
 import venusbackend.linker.ProgramDebugInfo
 import venusbackend.riscv.MachineCode
+import venusbackend.simulator.Simulator
 import venusbackend.toHex
 
 class Coverage() : SimulatorPlugin {
