@@ -37,7 +37,7 @@ object Lexer {
         return Pair(labels, insnTokens)
     }
 
-    private fun addNonemptyWord(previous: ArrayList<String>, next: StringBuilder) {
+    fun addNonemptyWord(previous: ArrayList<String>, next: StringBuilder) {
         val word = next.toString()
         if (word.isNotEmpty()) {
             previous += word

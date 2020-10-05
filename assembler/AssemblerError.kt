@@ -5,7 +5,7 @@ package venusbackend.assembler
  *
  * @todo split this into AssemblerUserError and AssemblerError
  */
-class AssemblerError : Throwable {
+open class AssemblerError : Throwable {
     companion object {
         fun parse_msg(msg: String? = null, dbg: DebugInfo? = null): String? {
             val s = msg ?: return msg
