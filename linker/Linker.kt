@@ -58,14 +58,14 @@ object Linker {
         }
         for (prog in progs) {
             for ((label, offset) in prog.labels) {
-                val start = if (offset >= MemorySegments.STATIC_BEGIN) {
-                    dataTotalOffset
-                } else {
-                    textTotalOffset
-                }
-                val location = start + offset
-
                 if (prog.isGlobalLabel(label)) {
+                    val start = if (offset >= MemorySegments.STATIC_BEGIN) {
+                        dataTotalOffset
+                    } else {
+                        textTotalOffset
+                    }
+                    val location = start + offset
+
                     linkedProgram.prog.addLabel(label, location)
                     linkedProgram.prog.makeLabelGlobal(label)
                     val previousValue = globalTable.put(label, location)
@@ -94,7 +94,8 @@ object Linker {
                     val toAddress = prog.labels.get(label)
                     if (toAddress != null) {
                         /* TODO: fix this for variable length instructions */
-                        relocator(mcode, location, toAddress + labelOffset + textTotalOffset, dbg = dbg)
+                        val target = toAddress + labelOffset + dataTotalOffset
+                        relocator(mcode, location, target, dbg = dbg)
                     } else {
                         /* need to relocate globally */
                         toRelocate.add(RelocationInfo(
@@ -139,14 +140,14 @@ object Linker {
             textTotalOffset += prog.textSize
             dataTotalOffset += prog.dataSize
             /* These two last lines are an ugly hack to fix the la of an import file generating a fixed offset already. */
-            dataTotalOffset += if (prog != progs.last()) {
-                for (i in 0 until prog.textSize) {
-                    linkedProgram.prog.addToData(0)
-                }
-                prog.dataSize + prog.textSize
-            } else {
-                prog.dataSize
-            }
+//            dataTotalOffset += if (prog != progs.last()) {
+//                for (i in 0 until prog.textSize) {
+//                    linkedProgram.prog.addToData(0)
+//                }
+//                prog.dataSize + prog.textSize
+//            } else {
+//                prog.dataSize
+//            }
         }
 
         for ((relocator, offset, label, labelOffset, dbg) in toRelocate) {
