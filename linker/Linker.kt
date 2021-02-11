@@ -94,7 +94,12 @@ object Linker {
                     val toAddress = prog.labels.get(label)
                     if (toAddress != null) {
                         /* TODO: fix this for variable length instructions */
-                        val target = toAddress + labelOffset + dataTotalOffset
+                        val textOrDataOffset = if (toAddress >= MemorySegments.STATIC_BEGIN) {
+                            dataTotalOffset
+                        } else {
+                            textTotalOffset
+                        }
+                        val target = toAddress + labelOffset + textOrDataOffset
                         relocator(mcode, location, target, dbg = dbg)
                     } else {
                         /* need to relocate globally */
