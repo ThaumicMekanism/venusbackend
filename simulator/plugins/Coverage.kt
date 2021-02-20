@@ -1,9 +1,12 @@
 package venusbackend.simulator.plugins
 
+import kotlinx.serialization.Serializable
 import venusbackend.linker.ProgramDebugInfo
 import venusbackend.riscv.MachineCode
 import venusbackend.simulator.Simulator
-import venusbackend.toHex
+
+@Serializable
+data class CoverageLine(val pc: Long, val loc: String, val count: Int)
 
 class Coverage() : SimulatorPlugin {
 
@@ -27,7 +30,7 @@ class Coverage() : SimulatorPlugin {
     }
 
     /** returns coverage lines */
-    fun finish(sim: Simulator): List<String> {
+    fun finish(sim: Simulator): List<CoverageLine> {
         // first we find all locations
         val allLocations = sim.linkedProgram.dbg.map { d -> getLocation(d) }
 
@@ -37,7 +40,8 @@ class Coverage() : SimulatorPlugin {
         val lines = allLocations.withIndex().map { (idx, loc) ->
             val pc = instructionIndexToPc(sim, idx)
             val count = (locationToCount[loc] ?: 0)
-            "${toHex(pc)} $loc $count"
+//            "${toHex(pc)} $loc $count"
+            CoverageLine(pc.toLong(), loc, count)
         }
 
         return lines
