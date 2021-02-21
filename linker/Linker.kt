@@ -87,6 +87,9 @@ object Linker {
 
             for ((relocator, offset, label, labelOffset, dbg) in prog.relocationTable) {
                 val location = textTotalOffset + offset
+                if (location >= MemorySegments.STATIC_BEGIN) {
+                    throw AssemblerError("Attempting to relocate an instruction above the static section!", dbg = dbg)
+                }
                 val mcode = linkedProgram.prog.insts[location / 4]
                 if (label == "") {
                     relocator(mcode, location, labelOffset, dbg = dbg)
