@@ -1,11 +1,9 @@
 package venusbackend.simulator.plugins
 
-import kotlinx.serialization.Serializable
 import venusbackend.linker.ProgramDebugInfo
 import venusbackend.riscv.MachineCode
 import venusbackend.simulator.Simulator
 
-@Serializable
 data class CoverageLine(val pc: Long, val loc: String, val count: Int)
 
 class Coverage() : SimulatorPlugin {

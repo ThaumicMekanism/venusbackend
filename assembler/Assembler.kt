@@ -127,7 +127,10 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
 
         val ifstack = mutableListOf<IfStatus>()
 
-        fun popIfStack(): IfStatus {
+        fun popIfStack(dbg: DebugInfo): IfStatus {
+            if (ifstack.isEmpty()) {
+                throw PreprocessorError("Could not find any other #if style preprocessor directives!", dbg = dbg)
+            }
             return ifstack.removeAt(ifstack.lastIndex)
         }
 
@@ -142,8 +145,8 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             ifstack.add(status)
         }
 
-        fun setTopIfStack(status: IfStatus) {
-            popIfStack()
+        fun setTopIfStack(status: IfStatus, dbg: DebugInfo) {
+            popIfStack(dbg)
             pushIfStack(status)
         }
 
@@ -225,9 +228,9 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 pline = pline.removePrefix(DIRECTIVE_ELIF).trim()
                 if (peekIfStack() == IfStatus.FINDING) {
                     if (eval_conditional(pline, pass, line, dbg)) {
-                        setTopIfStack(IfStatus.PROCESSING)
+                        setTopIfStack(IfStatus.PROCESSING, dbg)
                     } else {
-                        setTopIfStack(IfStatus.FINDING)
+                        setTopIfStack(IfStatus.FINDING, dbg)
                     }
                 }
             }
@@ -238,9 +241,9 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             var pline = line
             if (pline.startsWith(DIRECTIVE_ELSE)) {
                 if (peekIfStack() == IfStatus.FINDING) {
-                    setTopIfStack(IfStatus.PROCESSING)
+                    setTopIfStack(IfStatus.PROCESSING, dbg)
                 } else {
-                    setTopIfStack(IfStatus.PROCESSED)
+                    setTopIfStack(IfStatus.PROCESSED, dbg)
                 }
             }
             return line
@@ -251,7 +254,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 if (ifstack.size == 0) {
                     throw AssemblerError("#endif without #if", dbg = dbg)
                 }
-                popIfStack()
+                popIfStack(dbg)
             }
             if (ifstack.size == 0) {
                 return line
