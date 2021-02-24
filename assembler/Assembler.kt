@@ -126,11 +126,13 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
         }
 
         val ifstack = mutableListOf<IfStatus>()
+        val ifstackdbg = mutableListOf<DebugInfo>()
 
         fun popIfStack(dbg: DebugInfo): IfStatus {
             if (ifstack.isEmpty()) {
                 throw PreprocessorError("Could not find any other #if style preprocessor directives!", dbg = dbg)
             }
+            ifstackdbg.removeAt(ifstackdbg.lastIndex)
             return ifstack.removeAt(ifstack.lastIndex)
         }
 
@@ -141,13 +143,14 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             return ifstack.get(ifstack.lastIndex)
         }
 
-        fun pushIfStack(status: IfStatus) {
+        fun pushIfStack(status: IfStatus, dbg: DebugInfo) {
             ifstack.add(status)
+            ifstackdbg.add(dbg)
         }
 
         fun setTopIfStack(status: IfStatus, dbg: DebugInfo) {
             popIfStack(dbg)
-            pushIfStack(status)
+            pushIfStack(status, dbg)
         }
 
         fun preprocess(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
@@ -184,6 +187,12 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             return pline
         }
 
+        fun finish(pass: AssemblerPassOne) {
+            if (ifstack.isNotEmpty()) {
+                throw PreprocessorError("Use of preprocessor directive `#if`, `#ifdef`, `#elif` which was not finished by an `#endif`.\nIf you did not mean to use preprocessor directives, add a space between the `#` and word.\n", ifstackdbg.last())
+            }
+        }
+
         fun process_define(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
             var pline = line
             if (pline.startsWith(DIRECTIVE_DEFINE)) {
@@ -210,12 +219,12 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             if (pline.startsWith(DIRECTIVE_IF) && !(pline.startsWith(DIRECTIVE_IFDEF) || pline.startsWith(DIRECTIVE_IFNDEF))) {
                 pline = pline.removePrefix(DIRECTIVE_IF).trim()
                 if (peekIfStack() != IfStatus.PROCESSING) {
-                    pushIfStack(IfStatus.PROCESSED)
+                    pushIfStack(IfStatus.PROCESSED, dbg)
                 } else {
                     if (eval_conditional(pline, pass, line, dbg)) {
-                        pushIfStack(IfStatus.PROCESSING)
+                        pushIfStack(IfStatus.PROCESSING, dbg)
                     } else {
-                        pushIfStack(IfStatus.FINDING)
+                        pushIfStack(IfStatus.FINDING, dbg)
                     }
                 }
             }
@@ -275,12 +284,12 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 val tokens = pline.split(" ")
                 checkArgsLength(tokens, 1, dbg)
                 if (peekIfStack() == IfStatus.PROCESSING) {
-                    pushIfStack(IfStatus.PROCESSED)
+                    pushIfStack(IfStatus.PROCESSED, dbg)
                 } else {
                     if (pass.defines.containsKey(tokens[0])) {
-                        pushIfStack(IfStatus.PROCESSING)
+                        pushIfStack(IfStatus.PROCESSING, dbg)
                     } else {
-                        pushIfStack(IfStatus.FINDING)
+                        pushIfStack(IfStatus.FINDING, dbg)
                     }
                 }
             }
@@ -294,12 +303,12 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 val tokens = pline.split(" ")
                 checkArgsLength(tokens, 1, dbg)
                 if (peekIfStack() == IfStatus.PROCESSING) {
-                    pushIfStack(IfStatus.PROCESSED)
+                    pushIfStack(IfStatus.PROCESSED, dbg)
                 } else {
                     if (!pass.defines.containsKey(tokens[0])) {
-                        pushIfStack(IfStatus.PROCESSING)
+                        pushIfStack(IfStatus.PROCESSING, dbg)
                     } else {
-                        pushIfStack(IfStatus.FINDING)
+                        pushIfStack(IfStatus.FINDING, dbg)
                     }
                 }
             }
@@ -426,6 +435,11 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
             } catch (e: AssemblerError) {
                 errors.add(AssemblerError(currentLineNumber, e))
             }
+        }
+        try {
+            preprocessor.finish(this)
+        } catch (e: AssemblerError) {
+            errors.add(AssemblerError(currentLineNumber, e))
         }
     }
 
