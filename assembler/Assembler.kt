@@ -439,7 +439,11 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
         try {
             preprocessor.finish(this)
         } catch (e: AssemblerError) {
-            errors.add(AssemblerError(currentLineNumber, e))
+            if (e.dbg == null) {
+                errors.add(AssemblerError(currentLineNumber, e))
+            } else {
+                errors.add(AssemblerError(e.dbg!!.lineNo, e))
+            }
         }
     }
 
