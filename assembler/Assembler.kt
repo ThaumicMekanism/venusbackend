@@ -189,7 +189,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
 
         fun finish(pass: AssemblerPassOne) {
             if (ifstack.isNotEmpty()) {
-                throw PreprocessorError("Use of preprocessor directive `#if`, `#ifdef`, or `#elif` which was not finished by an `#endif`.\nIf you did not mean to use preprocessor directives, add a space between the `#` and word.\n", ifstackdbg.last())
+                throw PreprocessorError("Use of preprocessor directive `#if`, `#ifdef`, `#elif`, or `#else` which was not finished by an `#endif`.\nIf you did not mean to use preprocessor directives, add a space between the `#` and word.\n", ifstackdbg.last())
             }
         }
 
