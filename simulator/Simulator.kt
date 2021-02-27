@@ -383,7 +383,8 @@ open class Simulator(
             return ebreak
         }
 //        return ebreak || breakpoints[inst]
-        return ebreak || breakpoints.contains(location.toInt())
+        val isEbreak = Instruction[getNextInstruction()].name == "ebreak"
+        return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak)
 //        return ebreak xor breakpoints.contains(location.toInt() - 4)
     }
 
