@@ -1,4 +1,4 @@
-package venusbackend.simulator
+package venusbackend.simulator.plugins
 
 import venus.Renderer
 import venusbackend.plus
@@ -12,9 +12,12 @@ import venusbackend.riscv.insts.dsl.formats.base.RTypeFormat
 import venusbackend.riscv.insts.dsl.formats.base.STypeFormat
 import venusbackend.riscv.insts.dsl.impls.signExtend
 import venusbackend.riscv.insts.dsl.types.Instruction
+import venusbackend.riscv.insts.dsl.types.base.ShiftImmediateInstruction
 import venusbackend.riscv.insts.integer.base.i.jalr
 import venusbackend.riscv.insts.integer.base.s.sw
 import venusbackend.riscv.insts.integer.base.uj.jal
+import venusbackend.simulator.Diff
+import venusbackend.simulator.Simulator
 import venusbackend.simulator.diffs.MemoryDiff
 import venusbackend.simulator.diffs.PCDiff
 import venusbackend.simulator.diffs.RegisterDiff
@@ -22,7 +25,7 @@ import venusbackend.toHex
 
 data class StateChange(val pre: Diff, val post: Diff)
 
-class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = false) {
+class CallingConventionCheck(var returnOnlya0: Boolean = false) : SimulatorPlugin {
     var errorCnt = 0
 
     var callerRegs = getCallerSavedRegisters()
@@ -40,9 +43,10 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     var SavedRegs: MutableList<BooleanArray> = ArrayList()
     var returnAddresses: MutableList<Number> = ArrayList()
     var SavedRegsValues: MutableList<MutableList<Number>> = ArrayList()
-    var prevPC = sim.getPC()
+    var prevPC: Number = 0
 
-    fun run(): Int {
+    override fun init(sim: Simulator) {
+        reset(sim)
         for (i in calleeRegs) {
             currentSavedRegs[i] = true
         }
@@ -50,70 +54,91 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         currentActiveRegs[Registers.a1] = true
         currentActiveRegs[Registers.sp] = true
         currentActiveRegs[Registers.ra] = true
-        while (!sim.isDone()) {
-            val inst = sim.getNextInstruction()
-            prevPC = sim.getPC()
-            sim.step()
-            val pre = ArrayList<Diff>()
-            for (d in sim.preInstruction) {
-                if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
-                    pre.add(d)
-                }
-            }
-            val post = ArrayList<Diff>()
-            for (d in sim.postInstruction) {
-                if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
-                    post.add(d)
-                }
-            }
-            val pcStateChange: ArrayList<StateChange> = ArrayList()
-            val regStateChange: ArrayList<StateChange> = ArrayList()
-            val memStateChange: ArrayList<StateChange> = ArrayList()
-            for ((pre, post) in pre.zip(post)) {
-                if (pre is RegisterDiff) {
-                    regStateChange.add(StateChange(pre, post))
-                } else if (pre is MemoryDiff) {
-                    memStateChange.add(StateChange(pre, post))
-                } else if (pre is PCDiff) {
-                    pcStateChange.add(StateChange(pre, post))
-                }
-            }
-            handleSourceRegisters(inst)
-            for (pcSC in pcStateChange) {
-                val pre = pcSC.pre as PCDiff
-                val post = pcSC.post as PCDiff
-                if (isReturn(inst, post)) {
-                    handleReturn()
-                }
-                if (isCall(pre, post, inst)) {
-                    handleCall(pre.pc + inst.length)
-                }
-            }
-            for (regSC in regStateChange) {
-                val pre = regSC.pre as RegisterDiff
-                val post = regSC.post as RegisterDiff
-                handleDstRegister(post, inst)
-            }
-            for (memSC in memStateChange) {
-                val pre = memSC.pre as MemoryDiff
-                val post = memSC.post as MemoryDiff
-                if (isSave(inst)) {
-                    val reg = inst[InstructionField.RS2]
-                    currentSavedRegs[reg] = true
-                }
+    }
+
+    override fun reset(sim: Simulator) {
+        // Checking Caller (temp) registers are defined
+        currentActiveRegs = BooleanArray(32)
+        // Checking if Callee (save) registers are defined
+        currentSavedRegs = BooleanArray(32)
+
+        ActiveRegs = ArrayList()
+        SavedRegs = ArrayList()
+        returnAddresses = ArrayList()
+        SavedRegsValues = ArrayList()
+        prevPC = sim.getPC()
+
+        errorCnt = 0
+    }
+
+    override fun onStep(sim: Simulator, inst: MachineCode, prevPC: Number) {
+        this.prevPC = prevPC
+        val pre = ArrayList<Diff>()
+        for (d in sim.preInstruction) {
+            if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
+                pre.add(d)
             }
         }
-        Renderer.printConsole("Found $errorCnt warnings!")
+        val post = ArrayList<Diff>()
+        for (d in sim.postInstruction) {
+            if (d is RegisterDiff || d is MemoryDiff || d is PCDiff) {
+                post.add(d)
+            }
+        }
+        val pcStateChange: ArrayList<StateChange> = ArrayList()
+        val regStateChange: ArrayList<StateChange> = ArrayList()
+        val memStateChange: ArrayList<StateChange> = ArrayList()
+        for ((pre, post) in pre.zip(post)) {
+            if (pre is RegisterDiff) {
+                regStateChange.add(StateChange(pre, post))
+            } else if (pre is MemoryDiff) {
+                memStateChange.add(StateChange(pre, post))
+            } else if (pre is PCDiff) {
+                pcStateChange.add(StateChange(pre, post))
+            }
+        }
+        handleSourceRegisters(sim, inst)
+        for (pcSC in pcStateChange) {
+            val pre = pcSC.pre as PCDiff
+            val post = pcSC.post as PCDiff
+            if (isReturn(inst, post)) {
+                handleReturn(sim)
+            }
+            if (isCall(sim, pre, post, inst)) {
+                handleCall(sim, pre.pc + inst.length)
+            }
+        }
+        for (regSC in regStateChange) {
+            val pre = regSC.pre as RegisterDiff
+            val post = regSC.post as RegisterDiff
+            handleDstRegister(sim, post, inst)
+        }
+        for (memSC in memStateChange) {
+            val pre = memSC.pre as MemoryDiff
+            val post = memSC.post as MemoryDiff
+            if (isSave(inst)) {
+                val reg = inst[InstructionField.RS2]
+                currentSavedRegs[reg] = true
+            }
+        }
+    }
+
+    override fun finish(sim: Simulator, any: Any?): Any? {
+        return finish()
+    }
+
+    fun finish(): Int {
+        Renderer.displayError("Found $errorCnt warnings!")
         return errorCnt
     }
 
-    fun printViolation(s: String) {
+    fun printViolation(sim: Simulator, s: String) {
         errorCnt++
-        Renderer.displayError("[CC Violation]: (PC=${toHex(prevPC)}) $s ${getDbg()}")
+        Renderer.displayError("[CC Violation]: (PC=${toHex(prevPC)}) $s ${getDbg(sim)}\n")
     }
 
-    fun printWarning(s: String) {
-        Renderer.displayWarning("[CC Warning]: (PC=${toHex(prevPC)}) $s ${getDbg()}")
+    fun printWarning(sim: Simulator, s: String) {
+        Renderer.displayWarning("[CC Warning]: (PC=${toHex(prevPC)}) $s ${getDbg(sim)}\n")
     }
 
     fun getRetAddr(): Number? {
@@ -132,16 +157,16 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         return returnAddresses.removeLastOrNull()
     }
 
-    fun getDbg(): String {
+    fun getDbg(sim: Simulator): String {
         val idx = sim.invInstOrderMapping[prevPC]!!
         val dbg = sim.linkedProgram.dbg[idx]
         return "${dbg.programName}:${dbg.dbg.lineNo} ${dbg.dbg.line.trim()}"
     }
 
-    fun handleDstRegister(post: RegisterDiff, mcode: MachineCode) {
+    fun handleDstRegister(sim: Simulator, post: RegisterDiff, mcode: MachineCode) {
         // We have an error if we are not x0, we are a save (callee) register and we have not see some 'save' action.
         if (post.id != 0 && post.id in sRegs && !currentSavedRegs[post.id]) {
-            printViolation("Setting of a saved register (${getRegNameFromIndex(post.id)}) which has not been saved!")
+            printViolation(sim, "Setting of a saved register (${getRegNameFromIndex(post.id)}) which has not been saved!")
         }
 //        if (isMV(post, mcode)) {
 //            printWarning("Detected move/copy of a save register ${getRegNameFromIndex(post.id)} to another register! Will treat it as being saved. You should be using the stack to save these registers.")
@@ -150,11 +175,11 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         currentActiveRegs[mcode[InstructionField.RD]] = true
     }
 
-    fun handleSourceRegisters(mcode: MachineCode) {
+    fun handleSourceRegisters(sim: Simulator, mcode: MachineCode) {
         val srcRegs = getSourceRegs(mcode)
         for (reg in srcRegs) {
             if (reg != 0 && (!currentActiveRegs[reg])) {
-                printViolation("Usage of unset register ${getRegNameFromIndex(reg)}!")
+                printViolation(sim, "Usage of unset register ${getRegNameFromIndex(reg)}!")
             }
         }
     }
@@ -165,7 +190,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         if (inst.format is RTypeFormat || inst.format is ITypeFormat || inst.format is STypeFormat || inst.format is BTypeFormat) {
             regs.add(mcode[InstructionField.RS1])
         }
-        if (inst.format is RTypeFormat || inst.format is BTypeFormat) {
+        if ((inst.format is RTypeFormat || inst.format is BTypeFormat) && inst !is ShiftImmediateInstruction) {
             regs.add(mcode[InstructionField.RS2])
         }
         return regs
@@ -180,7 +205,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         }
     }
 
-    fun isCall(pre: PCDiff, post: PCDiff, mcode: MachineCode): Boolean {
+    fun isCall(sim: Simulator, pre: PCDiff, post: PCDiff, mcode: MachineCode): Boolean {
         val inst = Instruction[mcode]
         return if (post.pc != pre.pc + mcode.length) {
             inst.name == jal.name && sim.linkedProgram.prog.isAddrGlobalLabel(post.pc)
@@ -195,7 +220,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     }
 
     // Currently dont wanna support move. Too difficult
-    fun isMV(post: RegisterDiff, mcode: MachineCode): Boolean {
+    fun isMV(sim: Simulator, post: RegisterDiff, mcode: MachineCode): Boolean {
         val srcRegs = getSourceRegs(mcode)
         when (srcRegs.size) {
             0 -> {
@@ -218,13 +243,13 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    fun handleReturn() {
+    fun handleReturn(sim: Simulator) {
         val a = SavedRegsValues.removeLast()
         for (i in calleeRegs.withIndex()) {
             val exp = a[i.index]
             val act = sim.getReg(i.value)
             if (exp != act) {
-                printViolation("Save register ${getRegNameFromIndex(i.value)} not correctly restored before return! Expected ${toHex(exp)}, Actual ${toHex(act)}.")
+                printViolation(sim, "Save register ${getRegNameFromIndex(i.value)} not correctly restored before return! Expected ${toHex(exp)}, Actual ${toHex(act)}.")
             }
         }
 
@@ -251,7 +276,7 @@ class CallingConventionCheck(val sim: Simulator, val returnOnlya0: Boolean = fal
         popRetAddr()
     }
 
-    fun handleCall(nextPC: Number) {
+    fun handleCall(sim: Simulator, nextPC: Number) {
         val a = ArrayList<Number>()
         SavedRegsValues.add(a)
         for (i in calleeRegs) {

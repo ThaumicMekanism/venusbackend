@@ -58,14 +58,14 @@ object Linker {
         }
         for (prog in progs) {
             for ((label, offset) in prog.labels) {
-                val start = if (offset >= MemorySegments.STATIC_BEGIN) {
-                    dataTotalOffset
-                } else {
-                    textTotalOffset
-                }
-                val location = start + offset
-
                 if (prog.isGlobalLabel(label)) {
+                    val start = if (offset >= MemorySegments.STATIC_BEGIN) {
+                        dataTotalOffset
+                    } else {
+                        textTotalOffset
+                    }
+                    val location = start + offset
+
                     linkedProgram.prog.addLabel(label, location)
                     linkedProgram.prog.makeLabelGlobal(label)
                     val previousValue = globalTable.put(label, location)
@@ -87,6 +87,9 @@ object Linker {
 
             for ((relocator, offset, label, labelOffset, dbg) in prog.relocationTable) {
                 val location = textTotalOffset + offset
+                if (location >= MemorySegments.STATIC_BEGIN) {
+                    throw AssemblerError("Attempting to relocate an instruction above the static section!", dbg = dbg)
+                }
                 val mcode = linkedProgram.prog.insts[location / 4]
                 if (label == "") {
                     relocator(mcode, location, labelOffset, dbg = dbg)
@@ -94,7 +97,13 @@ object Linker {
                     val toAddress = prog.labels.get(label)
                     if (toAddress != null) {
                         /* TODO: fix this for variable length instructions */
-                        relocator(mcode, location, toAddress + labelOffset + textTotalOffset, dbg = dbg)
+                        val textOrDataOffset = if (toAddress >= MemorySegments.STATIC_BEGIN) {
+                            dataTotalOffset
+                        } else {
+                            textTotalOffset
+                        }
+                        val target = toAddress + labelOffset + textOrDataOffset
+                        relocator(mcode, location, target, dbg = dbg)
                     } else {
                         /* need to relocate globally */
                         toRelocate.add(RelocationInfo(
@@ -139,14 +148,14 @@ object Linker {
             textTotalOffset += prog.textSize
             dataTotalOffset += prog.dataSize
             /* These two last lines are an ugly hack to fix the la of an import file generating a fixed offset already. */
-            dataTotalOffset += if (prog != progs.last()) {
-                for (i in 0 until prog.textSize) {
-                    linkedProgram.prog.addToData(0)
-                }
-                prog.dataSize + prog.textSize
-            } else {
-                prog.dataSize
-            }
+//            dataTotalOffset += if (prog != progs.last()) {
+//                for (i in 0 until prog.textSize) {
+//                    linkedProgram.prog.addToData(0)
+//                }
+//                prog.dataSize + prog.textSize
+//            } else {
+//                prog.dataSize
+//            }
         }
 
         for ((relocator, offset, label, labelOffset, dbg) in toRelocate) {

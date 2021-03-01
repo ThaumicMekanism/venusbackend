@@ -5,7 +5,7 @@ package venusbackend.assembler
  *
  * @todo split this into AssemblerUserError and AssemblerError
  */
-class AssemblerError : Throwable {
+open class AssemblerError : Throwable {
     companion object {
         fun parse_msg(msg: String? = null, dbg: DebugInfo? = null): String? {
             val s = msg ?: return msg
@@ -15,11 +15,14 @@ class AssemblerError : Throwable {
     }
     var line: Int? = null
     var errorType: Throwable? = null
+    var dbg: DebugInfo? = null
 
     /**
      * @param msg the message to error with
      */
-    constructor(msg: String? = null, dbg: DebugInfo? = null) : super(parse_msg(msg, dbg))
+    constructor(msg: String? = null, dbg: DebugInfo? = null) : super(parse_msg(msg, dbg)) {
+        this.dbg = dbg
+    }
 
     /**
      * @param errorLine the line the error occurred on
@@ -31,6 +34,7 @@ class AssemblerError : Throwable {
 
     constructor(msg: String? = null, errorType: Throwable, dbg: DebugInfo? = null) : this(msg, dbg) {
         this.errorType = errorType
+        this.dbg = dbg
     }
 
     override fun toString(): String {

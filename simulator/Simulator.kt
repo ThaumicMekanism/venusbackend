@@ -11,6 +11,7 @@ import venusbackend.riscv.insts.dsl.types.Instruction
 import venusbackend.riscv.insts.floating.Decimal
 import venusbackend.riscv.insts.integer.base.i.ecall.Alloc
 import venusbackend.simulator.diffs.*
+import venusbackend.simulator.plugins.SimulatorPlugin
 import kotlin.math.max
 
 /* ktlint-enable no-wildcard-imports */
@@ -41,6 +42,8 @@ open class Simulator(
     var exitcode: Int? = null
 
     val alloc: Alloc = Alloc(this)
+
+    val plugins = LinkedHashMap<String, SimulatorPlugin>()
 
     init {
         (state).getReg(1)
@@ -94,6 +97,27 @@ open class Simulator(
         return this.ECallReceiver?.invoke(json)
     }
 
+    fun registerPlugin(id: String, plugin: SimulatorPlugin): Boolean {
+        if (id in this.plugins) {
+            return false
+        }
+        plugin.init(this)
+        this.plugins[id] = plugin
+        return true
+    }
+
+    fun removePlugin(id: String): Boolean {
+        if (id in this.plugins) {
+            this.plugins.remove(id)
+            return true
+        }
+        return false
+    }
+
+    fun finishPlugins() {
+        plugins.values.forEach { it.finish(this) }
+    }
+
     fun setHistoryLimit(limit: Int) {
         this.settings.max_histroy = limit
         this.history.limit = limit
@@ -132,20 +156,32 @@ open class Simulator(
         state.mem = mem
     }
 
-    fun run() {
+    fun run(plugins: List<SimulatorPlugin> = emptyList(), finishPluginsAfterRun: Boolean = true) {
+        plugins.forEach { it.init(this) }
         while (!isDone()) {
-            step()
+            step(plugins)
+        }
+        if (finishPluginsAfterRun) {
+            finishPlugins()
         }
     }
 
-    fun runToBreakpoint() {
+    fun runToBreakpoint(plugins: List<SimulatorPlugin> = emptyList()) {
         if (!isDone()) {
             // We need to step past a breakpoint.
-            step()
+            step(plugins)
         }
         while (!isDone() && !atBreakpoint()) {
-            step()
+            step(plugins)
         }
+    }
+
+    open fun step(plugins: List<SimulatorPlugin>): List<Diff> {
+        val inst = getNextInstruction()
+        val prevPC = getPC()
+        val diffs = step()
+        plugins.forEach { it.onStep(this, inst, prevPC) }
+        return diffs
     }
 
     open fun step(): List<Diff> {
@@ -159,6 +195,7 @@ open class Simulator(
         cycles++
         preInstruction.clear()
         postInstruction.clear()
+        val prevPC = getPC()
         val mcode: MachineCode = getNextInstruction()
         try {
             when (state.registerWidth) {
@@ -181,6 +218,7 @@ open class Simulator(
         if (isDone() && exitcode == null) {
             exitcode = state.getReg(Registers.a0).toInt()
         }
+        this.plugins.values.forEach { it.onStep(this, mcode, prevPC) }
         return postInstruction.toList()
     }
 
@@ -304,6 +342,7 @@ open class Simulator(
             addArg(args)
         }
         state.reset()
+        this.plugins.values.forEach { it.reset(this) }
     }
 
     fun trace(): Tracer {
@@ -360,13 +399,13 @@ open class Simulator(
 //            Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
             return ebreak
         }
-//        return ebreak || breakpoints[inst]
-//        return ebreak || breakpoints.contains(location.toInt())
+        val isEbreak = Instruction[getNextInstruction()].name == "ebreak"
         if (settings.breakBeforeInstruction) {
             return ebreak xor breakpoints.contains(location.toInt())
         } else {
-            return ebreak xor breakpoints.contains(location.toInt() - 4)
+            return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak)
         }
+
     }
 
     fun getPC() = state.getPC()
@@ -391,7 +430,7 @@ open class Simulator(
             if ((addr > heap && addr < sp) ||
                 (upperAddr > heap && upperAddr < sp)) {
                 throw SimulatorError(
-                        "Attempting to access uninitialized memory between the stack and heap. Attempting to access '$bytes' bytes at address '$addr'.",
+                        "Attempting to access uninitialized memory between the stack and heap. Attempting to access '$bytes' bytes at address '${Renderer.toHex(addr)}'.",
                         handled = true)
             }
         }

@@ -104,12 +104,293 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
     /** Preprocessor defines */
     private val defines = HashMap<String, String>(Assembler.defaultDefines)
 
+    class Preprocessor() {
+        val DIRECTIVE_DEFINE = "#define"
+        val DIRECTIVE_UNDEF = "#undef"
+        val DIRECTIVE_IF = "#if"
+        val DIRECTIVE_ELIF = "#elif"
+        val DIRECTIVE_ELSE = "#else"
+        val DIRECTIVE_ENDIF = "#endif"
+        val DIRECTIVE_IFDEF = "#ifdef"
+        val DIRECTIVE_IFNDEF = "#ifndef"
+        val DIRECTIVE_ERROR = "#error"
+        val DIRECTIVE_IMPORT = "#import"
+        val DIRECTIVE_INCLUDE = "#include"
+//    val DIRECTIVE_PRAGMA = "#pragma"
+//    val DIRECTIVE_LINE = "#line"
+//    val DIRECTIVE_USING = "#using"
+        enum class IfStatus(val status: String) {
+            FINDING("FINDING"),
+            PROCESSING("PROCESSING"),
+            PROCESSED("PROCESSED")
+        }
+
+        val ifstack = mutableListOf<IfStatus>()
+        val ifstackdbg = mutableListOf<DebugInfo>()
+
+        fun popIfStack(dbg: DebugInfo): IfStatus {
+            if (ifstack.isEmpty()) {
+                throw PreprocessorError("Could not find any other #if style preprocessor directives!", dbg = dbg)
+            }
+            ifstackdbg.removeAt(ifstackdbg.lastIndex)
+            return ifstack.removeAt(ifstack.lastIndex)
+        }
+
+        fun peekIfStack(): IfStatus {
+            if (ifstack.size == 0) {
+                return IfStatus.PROCESSING
+            }
+            return ifstack.get(ifstack.lastIndex)
+        }
+
+        fun pushIfStack(status: IfStatus, dbg: DebugInfo) {
+            ifstack.add(status)
+            ifstackdbg.add(dbg)
+        }
+
+        fun setTopIfStack(status: IfStatus, dbg: DebugInfo) {
+            popIfStack(dbg)
+            pushIfStack(status, dbg)
+        }
+
+        fun preprocess(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line.trim()
+
+            pline = process_define(pass, pline, dbg)
+            pline = process_undef(pass, pline, dbg)
+
+            pline = process_ifdef(pass, pline, dbg)
+            pline = process_ifndef(pass, pline, dbg)
+            pline = process_if(pass, pline, dbg)
+            pline = process_elif(pass, pline, dbg)
+            pline = process_else(pass, pline, dbg)
+            pline = process_endif(pass, pline, dbg)
+
+            pline = process_error(pass, pline, dbg)
+
+            pass.defines.forEach { (token: String, value: String) ->
+                val splitline = pline.split(Regex("\\s")).toMutableList()
+                val tokens = ArrayList<String>()
+                var diff = false
+                for (v in splitline) {
+                    if (v == token) {
+                        tokens.add(value)
+                        diff = true
+                    } else {
+                        tokens.add(v)
+                    }
+                }
+                if (diff) {
+                    pline = tokens.joinToString(" ")
+                }
+            }
+            return pline
+        }
+
+        fun finish(pass: AssemblerPassOne) {
+            if (ifstack.isNotEmpty()) {
+                throw PreprocessorError("Use of preprocessor directive `#if`, `#ifdef`, `#elif`, or `#else` which was not finished by an `#endif`.\nIf you did not mean to use preprocessor directives, add a space between the `#` and word.\n", ifstackdbg.last())
+            }
+        }
+
+        fun process_define(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_DEFINE)) {
+                pline = pline.removePrefix(DIRECTIVE_DEFINE).trim()
+                val tokens = pline.split(" ").toMutableList()
+                pass.defines[tokens.removeAt(0)] = tokens.joinToString(" ")
+            }
+            return line
+        }
+
+        fun process_undef(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_UNDEF)) {
+                pline = pline.removePrefix(DIRECTIVE_UNDEF).trim()
+                val tokens = pline.split(" ")
+                checkArgsLength(tokens, 1, dbg)
+                pass.defines.remove(tokens[0])
+            }
+            return line
+        }
+
+        fun process_if(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_IF) && !(pline.startsWith(DIRECTIVE_IFDEF) || pline.startsWith(DIRECTIVE_IFNDEF))) {
+                pline = pline.removePrefix(DIRECTIVE_IF).trim()
+                if (peekIfStack() != IfStatus.PROCESSING) {
+                    pushIfStack(IfStatus.PROCESSED, dbg)
+                } else {
+                    if (eval_conditional(pline, pass, line, dbg)) {
+                        pushIfStack(IfStatus.PROCESSING, dbg)
+                    } else {
+                        pushIfStack(IfStatus.FINDING, dbg)
+                    }
+                }
+            }
+            return line
+        }
+
+        fun process_elif(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_ELIF)) {
+                pline = pline.removePrefix(DIRECTIVE_ELIF).trim()
+                if (peekIfStack() == IfStatus.FINDING) {
+                    if (eval_conditional(pline, pass, line, dbg)) {
+                        setTopIfStack(IfStatus.PROCESSING, dbg)
+                    } else {
+                        setTopIfStack(IfStatus.FINDING, dbg)
+                    }
+                }
+            }
+            return line
+        }
+
+        fun process_else(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_ELSE)) {
+                if (peekIfStack() == IfStatus.FINDING) {
+                    setTopIfStack(IfStatus.PROCESSING, dbg)
+                } else {
+                    setTopIfStack(IfStatus.PROCESSED, dbg)
+                }
+            }
+            return line
+        }
+
+        fun process_endif(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            if (line == DIRECTIVE_ENDIF) {
+                if (ifstack.size == 0) {
+                    throw AssemblerError("#endif without #if", dbg = dbg)
+                }
+                popIfStack(dbg)
+            }
+            if (ifstack.size == 0) {
+                return line
+            }
+            val ifstatus = peekIfStack()
+            if (ifstatus == IfStatus.FINDING || ifstatus == IfStatus.PROCESSED) {
+                // We need to clear the line if we are in a false if/elif statement
+                // OR after we finished an if block but are not to the endif.
+                return ""
+            }
+            return line
+        }
+
+        fun process_ifdef(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_IFDEF)) {
+                pline = pline.removePrefix(DIRECTIVE_IFDEF).trim()
+                val tokens = pline.split(" ")
+                checkArgsLength(tokens, 1, dbg)
+                if (peekIfStack() == IfStatus.PROCESSING) {
+                    pushIfStack(IfStatus.PROCESSED, dbg)
+                } else {
+                    if (pass.defines.containsKey(tokens[0])) {
+                        pushIfStack(IfStatus.PROCESSING, dbg)
+                    } else {
+                        pushIfStack(IfStatus.FINDING, dbg)
+                    }
+                }
+            }
+            return line
+        }
+
+        fun process_ifndef(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_IFNDEF)) {
+                pline = pline.removePrefix(DIRECTIVE_IFNDEF).trim()
+                val tokens = pline.split(" ")
+                checkArgsLength(tokens, 1, dbg)
+                if (peekIfStack() == IfStatus.PROCESSING) {
+                    pushIfStack(IfStatus.PROCESSED, dbg)
+                } else {
+                    if (!pass.defines.containsKey(tokens[0])) {
+                        pushIfStack(IfStatus.PROCESSING, dbg)
+                    } else {
+                        pushIfStack(IfStatus.FINDING, dbg)
+                    }
+                }
+            }
+            return line
+        }
+
+        fun process_error(pass: AssemblerPassOne, line: String, dbg: DebugInfo): String {
+            var pline = line
+            if (pline.startsWith(DIRECTIVE_ERROR)) {
+                pline = pline.removePrefix(DIRECTIVE_ERROR).trim()
+                throw AssemblerError(pline, dbg = dbg)
+            }
+            return line
+        }
+
+        fun eval_conditional(condition: String, pass: AssemblerPassOne, line: String, dbg: DebugInfo): Boolean {
+//            val tokens = lex_conditional(condition, dbg)
+//            for (token in tokens) {
+//                if (!token.final) {
+//
+//                }
+//            }
+            return false
+        }
+
+        data class LexedConditional(val token: String, val final: Boolean)
+
+        fun lex_conditional(line: String, dbg: DebugInfo): List<LexedConditional> {
+            var currentWord = StringBuilder("")
+            val previousWords = ArrayList<LexedConditional>()
+            var parenCount = 0
+            var prevEqual: Boolean = false
+
+            for (ch in line) {
+                if (prevEqual) {
+                    if (ch == '=') {
+                        previousWords.add(LexedConditional("==", false))
+                    } else {
+                        throw PreprocessorError("Invalid number of equal signs", dbg)
+                    }
+                }
+                when (ch) {
+                    '(' -> {
+                        if (parenCount == 0) {
+                            previousWords.add(LexedConditional(currentWord.toString(), false))
+                            currentWord = StringBuilder("")
+                        }
+                        parenCount++
+                    }
+                    ')' -> {
+                        if (parenCount == 0) {
+                            throw PreprocessorError("Uneven parentheses count", dbg = dbg)
+                        }
+                        previousWords.add(LexedConditional(currentWord.toString(), true))
+                        currentWord = StringBuilder("")
+                        parenCount--
+                    }
+                    '=' -> {
+                        prevEqual = true
+                        previousWords.add(LexedConditional(currentWord.toString(), false))
+                        currentWord = StringBuilder("")
+                    }
+                    ' ' -> {
+                        previousWords.add(LexedConditional(currentWord.toString(), false))
+                        currentWord = StringBuilder("")
+                    }
+                    else -> {
+                        currentWord.append(ch)
+                    }
+                }
+            }
+            return previousWords
+        }
+    }
+
     fun run(): PassOneOutput {
         doPassOne()
         return PassOneOutput(prog, talInstructions, errors, warnings)
     }
 
     private fun doPassOne() {
+        val preprocessor = Preprocessor()
         for (line in text.lines()) {
             try {
                 currentLineNumber++
@@ -117,25 +398,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
 
                 val offset = getOffset()
 
-                var pline = line
-                defines.forEach { (token: String, value: String) ->
-                    val splitline = pline.split(Regex("\\s")).toMutableList()
-                    val tokens = ArrayList<String>()
-                    var diff = false
-                    for (v in splitline) {
-                        if (v == token) {
-                            tokens.add(value)
-                            diff = true
-                        } else {
-                            tokens.add(v)
-                        }
-                    }
-                    if (diff) {
-                        pline = tokens.joinToString(" ")
-                    }
-                }
-
-                preprocess(line, dbg)
+                var pline = preprocessor.preprocess(this, line, dbg)
 
                 val (labels, args) = Lexer.lexLine(pline, dbg)
                 for (label in labels) {
@@ -173,24 +436,13 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 errors.add(AssemblerError(currentLineNumber, e))
             }
         }
-    }
-
-    private fun preprocess(line: String, dbg: DebugInfo) {
-        val DIRECTIVE_DEFINE = "define"
-        val DIRECTIVE_UNDEF = "undef"
-        var pline = line.trim()
-        if (pline.startsWith("#")) {
-            pline = pline.removePrefix("#").trim()
-            if (pline.startsWith(DIRECTIVE_DEFINE)) {
-                pline = pline.removePrefix(DIRECTIVE_DEFINE).trim()
-                val tokens = pline.split(" ").toMutableList()
-                defines[tokens.removeAt(0)] = tokens.joinToString(" ")
-            }
-            if (pline.startsWith(DIRECTIVE_UNDEF)) {
-                pline = pline.removePrefix(DIRECTIVE_UNDEF).trim()
-                val tokens = pline.split(" ")
-                checkArgsLength(tokens, 1, dbg)
-                defines.remove(tokens[0])
+        try {
+            preprocessor.finish(this)
+        } catch (e: AssemblerError) {
+            if (e.dbg == null) {
+                errors.add(AssemblerError(currentLineNumber, e))
+            } else {
+                errors.add(AssemblerError(e.dbg!!.lineNo, e))
             }
         }
     }
