@@ -150,9 +150,9 @@ class Program(var name: String = "anonymous", val absPath: String) {
             val intlabel = label.substring(0, label.length - 1).toInt()
             val number_set = localReferences[intlabel] ?: throw AssemblerError("The number label '$intlabel' has not been defined!", dbg)
             if (label.matches(Regex("\\d+f"))) {
-                number_set.filter { it >= address }.min()
+                number_set.filter { it >= address }.min() ?: throw AssemblerError("The number label '$intlabel' has been defined but couldn't be found in forward direction.", dbg)
             } else {
-                number_set.filter { it <= address }.max()
+                number_set.filter { it <= address }.max() ?: throw AssemblerError("The number label '$intlabel' has been defined but couldn't be found in backward direction.", dbg)
             }
         } else {
             labels.get(label)
