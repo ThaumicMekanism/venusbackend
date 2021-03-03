@@ -387,10 +387,6 @@ open class Simulator(
         }
     }
 
-    fun setBreakBeforeInstruction(set: Boolean) {
-        settings.breakBeforeInstruction = set;
-    }
-
     /* TODO Make this more efficient while robust! */
     fun atBreakpoint(): Boolean {
         val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
@@ -399,13 +395,9 @@ open class Simulator(
 //            Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
             return ebreak
         }
-        val isEbreak = Instruction[getNextInstruction()].name == "ebreak"
-        if (settings.breakBeforeInstruction) {
-            return ebreak xor breakpoints.contains(location.toInt())
-        } else {
-            return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak)
-        }
-
+//        return ebreak || breakpoints[inst]
+//        return ebreak || breakpoints.contains(location.toInt())
+        return ebreak xor breakpoints.contains(location.toInt())
     }
 
     fun getPC() = state.getPC()
