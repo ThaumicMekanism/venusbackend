@@ -17,6 +17,9 @@ import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
 import venusbackend.riscv.MemorySegments
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
+import kotlin.js.JSON
+import kotlin.js.Json
+import kotlin.js.json
 
 val ecall = Instruction(
     // Fixme The long and quadword are only build for a 32 bit system!
@@ -45,7 +48,13 @@ val ecall = Instruction(
                 20 -> ferror(sim)
                 34 -> printHex(sim)
                 0x3CC -> clib(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> {
+                    if (sim.hasEcallReceiver()) {
+                        sendECallJson(whichCall.toInt(), sim)
+                    } else {
+                        Renderer.printConsole("Invalid ecall $whichCall")
+                    }
+                }
             }
             if (!(whichCall == 10 || whichCall == 17)) {
                 sim.incrementPC(mcode.length)
@@ -69,7 +78,13 @@ val ecall = Instruction(
                 19L -> feof(sim)
                 20L -> ferror(sim)
                 34L -> printHex(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> {
+                    if (sim.hasEcallReceiver()) {
+                        sendECallJson(whichCall.toInt(), sim)
+                    } else {
+                        Renderer.printConsole("Invalid ecall $whichCall")
+                    }
+                }
             }
             if (!(whichCall == 10L || whichCall == 17L)) {
                 sim.incrementPC(mcode.length)
@@ -93,7 +108,13 @@ val ecall = Instruction(
                 QuadWord(19) -> feof(sim)
                 QuadWord(20) -> ferror(sim)
                 QuadWord(34) -> printHex(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> {
+                    if (sim.hasEcallReceiver()) {
+                        sendECallJson(whichCall.toInt(), sim)
+                    } else {
+                        Renderer.printConsole("Invalid ecall $whichCall")
+                    }
+                }
             }
             if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17))) {
                 sim.incrementPC(mcode.length)
@@ -118,6 +139,41 @@ enum class Syscall(val syscall: Int) {
     FEOF(19),
     FERROR(20),
     PRINT_HEX(34)
+}
+
+private fun sendECallJson(id: Int, sim: Simulator) {
+    val jsonstr = sim.sendECallJson(createJson(id, getParamsJson(id, sim)))
+    if (jsonstr != null) {
+        val jsonobj: Json = JSON.parse(jsonstr)
+
+        val a0: Any? = jsonobj.get("a0")
+        val a1: Any? = jsonobj.get("a1")
+
+        if (a0 is Int) sim.setReg(10, a0)
+        if (a1 is Int) sim.setReg(11, a1)
+    }
+}
+
+private fun getParamsJson(id: Int, sim: Simulator): Json {
+    return json(
+        "a0" to id,
+        "a1" to sim.getReg(11),
+        "a2" to sim.getReg(12),
+        "a3" to sim.getReg(13),
+        "a4" to sim.getReg(14),
+        "a5" to sim.getReg(15),
+        "a6" to sim.getReg(16),
+        "a7" to sim.getReg(17)
+    )
+}
+
+private fun createJson(id: Int, params: Json): String {
+    val data = json(
+        "id" to id,
+        "params" to params
+    )
+
+    return JSON.stringify(data)
 }
 
 // All file operations will return -1 if the file descriptor is not found.

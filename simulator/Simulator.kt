@@ -26,6 +26,7 @@ open class Simulator(
     open val simulatorID: Int = 0
 ) {
 
+    private var ECallReceiver: ((String) -> String)? = null
     private var cycles = 0
     val history = History(settings.max_histroy)
     val preInstruction = ArrayList<Diff>()
@@ -103,6 +104,18 @@ open class Simulator(
 
     fun finishPlugins() {
         plugins.values.forEach { it.finish(this) }
+    }
+
+    fun registerECallReceiver(receiver: (String) -> String) {
+        this.ECallReceiver = receiver
+    }
+
+    fun hasEcallReceiver() : Boolean {
+        return (this.ECallReceiver != null)
+    }
+
+    fun sendECallJson(json: String) : String? {
+        return this.ECallReceiver?.invoke(json)
     }
 
     fun setHistoryLimit(limit: Int) {
