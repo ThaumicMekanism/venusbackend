@@ -32,8 +32,10 @@ open class Simulator(
     val postInstruction = ArrayList<Diff>()
 //    private val breakpoints: Array<Boolean>
     private val breakpoints = HashSet<Int>()
+    private val watchpoints = HashSet<WatchPoint>()
     var args = ArrayList<String>()
     var ebreak = false
+    var atWatchPoint: HashSet<WatchPoint> = HashSet()
     var stdout = ""
     var filesHandler = FilesHandler(this)
     val instOrderMapping = HashMap<Int, Int>()
@@ -166,6 +168,7 @@ open class Simulator(
     open fun step(plugins: List<SimulatorPlugin>): List<Diff> {
         val inst = getNextInstruction()
         val prevPC = getPC()
+        this.atWatchPoint.clear()
         val diffs = step()
         plugins.forEach { it.onStep(this, inst, prevPC) }
         return diffs
@@ -178,6 +181,7 @@ open class Simulator(
         this.branched = false
         this.jumped = false
         this.ebreak = false
+        this.atWatchPoint.clear()
         this.ecallMsg = ""
         cycles++
         preInstruction.clear()
@@ -384,8 +388,32 @@ open class Simulator(
         }
 //        return ebreak || breakpoints[inst]
         val isEbreak = Instruction[getNextInstruction()].name == "ebreak"
-        return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak)
+        return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak) || (atWatchPoint.isNotEmpty())
 //        return ebreak xor breakpoints.contains(location.toInt() - 4)
+    }
+
+    fun addWatchpoint(wp: WatchPoint): Boolean {
+        return this.watchpoints.add(wp)
+    }
+
+    fun removeWatchpoint(wp: WatchPoint): Boolean {
+        return this.watchpoints.remove(wp)
+    }
+
+    fun hasWatchpoint(wp: WatchPoint): Boolean {
+        return this.watchpoints.contains(wp)
+    }
+
+    fun getTrigguredWatchpoints(): HashSet<WatchPoint>? {
+        return atWatchPoint
+    }
+
+    fun handleWatchPoints(isStore: Boolean, addr: Number, value: Number) {
+        this.watchpoints.forEach { wp ->
+            if (wp.eval(isStore, addr, value)) {
+                this.atWatchPoint.add(wp)
+            }
+        }
     }
 
     fun getPC() = state.getPC()
@@ -416,7 +444,13 @@ open class Simulator(
         }
     }
 
-    fun loadByte(addr: Number): Int = state.mem.loadByte(addr)
+    fun loadByte(addr: Number, handleWatchpoint: Boolean = true): Int {
+        val value = state.mem.loadByte(addr)
+        if (handleWatchpoint) {
+            handleWatchPoints(false, addr, value)
+        }
+        return value
+    }
     fun loadBytewCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.BYTE.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not BYTE aligned!")
@@ -428,7 +462,13 @@ open class Simulator(
         return this.loadByte(addr)
     }
 
-    fun loadHalfWord(addr: Number): Int = state.mem.loadHalfWord(addr)
+    fun loadHalfWord(addr: Number, handleWatchpoint: Boolean = true): Int {
+        val value = state.mem.loadHalfWord(addr)
+        if (handleWatchpoint) {
+            handleWatchPoints(false, addr, value)
+        }
+        return value
+    }
     fun loadHalfWordwCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.HALF.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not HALF WORD aligned!")
@@ -440,7 +480,13 @@ open class Simulator(
         return this.loadHalfWord(addr)
     }
 
-    fun loadWord(addr: Number): Int = state.mem.loadWord(addr)
+    fun loadWord(addr: Number, handleWatchpoint: Boolean = true): Int {
+        val value = state.mem.loadWord(addr)
+        if (handleWatchpoint) {
+            handleWatchPoints(false, addr, value)
+        }
+        return value
+    }
     fun loadWordwCache(addr: Number): Int {
         if (this.settings.alignedAddress && addr % MemSize.WORD.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not WORD aligned!")
@@ -452,7 +498,13 @@ open class Simulator(
         return this.loadWord(addr)
     }
 
-    fun loadLong(addr: Number): Long = state.mem.loadLong(addr)
+    fun loadLong(addr: Number, handleWatchpoint: Boolean = true): Long {
+        val value = state.mem.loadLong(addr)
+        if (handleWatchpoint) {
+            handleWatchPoints(false, addr, value)
+        }
+        return value
+    }
     fun loadLongwCache(addr: Number): Long {
         if (this.settings.alignedAddress && addr % MemSize.LONG.size != 0) {
             throw AlignmentError("Address: '" + Renderer.toHex(addr) + "' is not LONG aligned!")
@@ -465,9 +517,10 @@ open class Simulator(
     }
 
     fun storeByte(addr: Number, value: Number) {
-        preInstruction.add(MemoryDiff(addr, loadWord(addr)))
+        preInstruction.add(MemoryDiff(addr, loadWord(addr, handleWatchpoint = false)))
         state.mem.storeByte(addr, value)
-        postInstruction.add(MemoryDiff(addr, loadWord(addr)))
+        handleWatchPoints(true, addr, value)
+        postInstruction.add(MemoryDiff(addr, loadWord(addr, handleWatchpoint = false)))
         this.storeTextOverrideCheck(addr, value, MemSize.BYTE)
     }
     fun storeBytewCache(addr: Number, value: Number) {
@@ -486,9 +539,10 @@ open class Simulator(
     }
 
     fun storeHalfWord(addr: Number, value: Number) {
-        preInstruction.add(MemoryDiff(addr, loadWord(addr)))
+        preInstruction.add(MemoryDiff(addr, loadWord(addr, handleWatchpoint = false)))
         state.mem.storeHalfWord(addr, value)
-        postInstruction.add(MemoryDiff(addr, loadWord(addr)))
+        handleWatchPoints(true, addr, value)
+        postInstruction.add(MemoryDiff(addr, loadWord(addr, handleWatchpoint = false)))
         this.storeTextOverrideCheck(addr, value, MemSize.HALF)
     }
     fun storeHalfWordwCache(addr: Number, value: Number) {
@@ -506,9 +560,10 @@ open class Simulator(
     }
 
     fun storeWord(addr: Number, value: Number) {
-        preInstruction.add(MemoryDiff(addr, loadWord(addr)))
+        preInstruction.add(MemoryDiff(addr, loadWord(addr, handleWatchpoint = false)))
         state.mem.storeWord(addr, value)
-        postInstruction.add(MemoryDiff(addr, loadWord(addr)))
+        handleWatchPoints(true, addr, value)
+        postInstruction.add(MemoryDiff(addr, loadWord(addr, handleWatchpoint = false)))
         this.storeTextOverrideCheck(addr, value, MemSize.WORD)
     }
     fun storeWordwCache(addr: Number, value: Number) {
@@ -526,9 +581,10 @@ open class Simulator(
     }
 
     fun storeLong(addr: Number, value: Number) {
-        preInstruction.add(MemoryDiff(addr, loadLong(addr)))
+        preInstruction.add(MemoryDiff(addr, loadLong(addr, handleWatchpoint = false)))
         state.mem.storeLong(addr, value)
-        postInstruction.add(MemoryDiff(addr, loadLong(addr)))
+        handleWatchPoints(true, addr, value)
+        postInstruction.add(MemoryDiff(addr, loadLong(addr, handleWatchpoint = false)))
         this.storeTextOverrideCheck(addr, value, MemSize.LONG)
     }
     fun storeLongwCache(addr: Number, value: Number) {
