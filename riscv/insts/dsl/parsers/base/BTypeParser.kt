@@ -11,8 +11,8 @@ import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
 /* ktlint-enable no-wildcard-imports */
 
 object BTypeParser : InstructionParser {
-    const val B_TYPE_MIN = -2048
-    const val B_TYPE_MAX = 2047
+    const val B_TYPE_MIN = -4096
+    const val B_TYPE_MAX = 4095
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
         checkArgsLength(args.size, 3, dbg)
 
