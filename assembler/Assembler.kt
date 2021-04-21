@@ -699,6 +699,14 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 }
             }
 
+            ".requiv", ".requ" -> {
+                checkArgsLength(args, 2, dbg)
+                val oldDefn = prog.addRegEqu(args[0], args[1])
+                if (directive == ".equiv" && oldDefn != null) {
+                    throw AssemblerError("attempt to redefine RegisterLabel ${args[0]}", dbg)
+                }
+            }
+
             ".float" -> {
                 for (arg in args) {
                     try {
@@ -769,11 +777,12 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
  * @see venus.riscv.Program.addDebugInfo
  */
 
-internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<DebugInstruction>) {
+internal class AssemblerPassTwo(val prog: Program, var talInstructions: List<DebugInstruction>) {
     private val errors = ArrayList<AssemblerError>()
     private val warnings = ArrayList<AssemblerWarning>()
     fun run(): AssemblerOutput {
         resolveEquivs(prog)
+        talInstructions = resolveRegEquivs()
         for ((dbg, inst) in talInstructions) {
             try {
                 addInstruction(inst, dbg)
@@ -838,6 +847,32 @@ internal class AssemblerPassTwo(val prog: Program, val talInstructions: List<Deb
             }
         }
     }
+
+    /**
+     * Resolves all labels in Program defined by .requ or .requiv.
+     * Replaces the labels with the normal register names and returns the instructions as a new list.
+     * Checks for duplicate or conflicting definitions.
+     */
+    private fun resolveRegEquivs (): ArrayList<DebugInstruction> {
+        val conflicts = prog.labels.keys.intersect(prog.regEquivs.keys) + prog.equivs.keys.intersect(prog.regEquivs.keys)
+        if (conflicts.isNotEmpty()) {
+            throw AssemblerError("conflicting definitions for $conflicts")
+        }
+        val resolvedTalInstructions = ArrayList<DebugInstruction>()
+        for ((i, debugInst) in talInstructions.withIndex()) {
+            val replacedTokens = ArrayList<String>()
+            for (token in debugInst.LineTokens) {
+                if (prog.regEquivs.keys.contains(token)) {
+                    prog.regEquivs[token]?.let { replacedTokens.add(it) }
+                } else {
+                    replacedTokens.add(token)
+                }
+            }
+            resolvedTalInstructions.add(DebugInstruction(talInstructions[i].debug, replacedTokens))
+        }
+        return resolvedTalInstructions
+    }
+
     /** Return the ultimate definition of SYM, an .equ-defined symbol, in
      *  PROG, assuming that if SYM is in ACTIVE, it is part of a
      *  circular chain of definitions. */

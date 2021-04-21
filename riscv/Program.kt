@@ -22,6 +22,7 @@ class Program(var name: String = "anonymous", val absPath: String) {
     val debugInfo = ArrayList<DebugInfo>()
     val labels = HashMap<String, Int>()
     val equivs = HashMap<String, String>()
+    val regEquivs = HashMap<String, String>()
     val relocationTable = ArrayList<RelocationInfo>()
     val dataRelocationTable = ArrayList<DataRelocationInfo>()
     val dataSegment = ArrayList<Byte>()
@@ -106,6 +107,7 @@ class Program(var name: String = "anonymous", val absPath: String) {
      * Adds a symbol defined by .equiv, .equ, or .set.
      */
     fun addEqu(label: String, defn: String) = equivs.put(label, defn)
+    fun addRegEqu(label: String, reg: String) = regEquivs.put(label, reg)
     private val SYM_PATN = Regex("""(.*?)(?:([-+])(?:(\d+)|(.*)))?$""")
     /** Return the symbolic part of LABELARG, where LABELARG may be either
      *  <symbol>, <symbol>+<decimal numeral>, or <symbol>-<decimal numeral>.
