@@ -699,7 +699,7 @@ internal class AssemblerPassOne(private val text: String, name: String = "anonym
                 }
             }
 
-            ".requiv", ".requ" -> {
+            ".regequiv", ".regequ" -> {
                 checkArgsLength(args, 2, dbg)
                 val oldDefn = prog.addRegEqu(args[0], args[1])
                 if (directive == ".equiv" && oldDefn != null) {
