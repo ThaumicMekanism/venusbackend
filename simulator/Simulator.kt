@@ -85,18 +85,6 @@ open class Simulator(
 //        breakpoints = Array(linkedProgram.prog.insts.size, { false })
     }
 
-    fun registerECallReceiver(receiver: (String) -> String) {
-        this.ECallReceiver = receiver
-    }
-
-    fun hasEcallReceiver() : Boolean {
-        return (this.ECallReceiver != null)
-    }
-
-    fun sendECallJson(json: String) : String? {
-        return this.ECallReceiver?.invoke(json)
-    }
-
     fun registerPlugin(id: String, plugin: SimulatorPlugin): Boolean {
         if (id in this.plugins) {
             return false
@@ -116,6 +104,18 @@ open class Simulator(
 
     fun finishPlugins() {
         plugins.values.forEach { it.finish(this) }
+    }
+
+    fun registerECallReceiver(receiver: (String) -> String) {
+        this.ECallReceiver = receiver
+    }
+
+    fun hasEcallReceiver() : Boolean {
+        return (this.ECallReceiver != null)
+    }
+
+    fun sendECallJson(json: String) : String? {
+        return this.ECallReceiver?.invoke(json)
     }
 
     fun setHistoryLimit(limit: Int) {
@@ -387,10 +387,6 @@ open class Simulator(
         }
     }
 
-    fun setBreakBeforeInstruction(set: Boolean) {
-        settings.breakBeforeInstruction = set;
-    }
-
     /* TODO Make this more efficient while robust! */
     fun atBreakpoint(): Boolean {
         val location = (getPC() - MemorySegments.TEXT_BEGIN).toLong()
@@ -399,13 +395,10 @@ open class Simulator(
 //            Renderer.displayWarning("""Could not find an instruction mapped to the current address when checking for a breakpoint!""")
             return ebreak
         }
+//        return ebreak || breakpoints[inst]
         val isEbreak = Instruction[getNextInstruction()].name == "ebreak"
-        if (settings.breakBeforeInstruction) {
-            return ebreak xor breakpoints.contains(location.toInt())
-        } else {
-            return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak)
-        }
-
+        return (ebreak && !breakpoints.contains(location.toInt() - 4)) || (breakpoints.contains(location.toInt()) && !isEbreak)
+//        return ebreak xor breakpoints.contains(location.toInt() - 4)
     }
 
     fun getPC() = state.getPC()

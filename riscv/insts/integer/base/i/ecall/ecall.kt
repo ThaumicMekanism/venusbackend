@@ -77,7 +77,13 @@ val ecall = Instruction(
                 19L -> feof(sim)
                 20L -> ferror(sim)
                 34L -> printHex(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> {
+                    if (sim.hasEcallReceiver()) {
+                        sendECallJson(whichCall.toInt(), sim)
+                    } else {
+                        Renderer.printConsole("Invalid ecall $whichCall")
+                    }
+                }
             }
             sendECallJson(whichCall.toInt(), sim)
             if (!(whichCall == 10L || whichCall == 17L)) {
@@ -102,7 +108,13 @@ val ecall = Instruction(
                 QuadWord(19) -> feof(sim)
                 QuadWord(20) -> ferror(sim)
                 QuadWord(34) -> printHex(sim)
-                else -> Renderer.printConsole("Invalid ecall $whichCall")
+                else -> {
+                    if (sim.hasEcallReceiver()) {
+                        sendECallJson(whichCall.toInt(), sim)
+                    } else {
+                        Renderer.printConsole("Invalid ecall $whichCall")
+                    }
+                }
             }
             sendECallJson(whichCall.toInt(), sim)
             if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17))) {
