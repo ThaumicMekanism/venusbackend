@@ -684,23 +684,23 @@ open class Simulator(
         return destaddr
     }
 
-//    fun dump(sim: Simulator): CoreDump {
-//        val d = HashMap<String, Any>()
-//        d.put("time", Date.now().toString())
-//        val integer = HashMap<Int, Number>()
-//        val floating = HashMap<Int, Decimal>()
-//        for (i in 1 until 32) {
-//            integer[i] = sim.getReg(i)
-//            floating[i] = sim.getFReg(i)
-//        }
-//        val registers = HashMap<String, HashMap<Int, Number>>()
-//        d.put("registers", registers)
-//        val memory = HashMap<String, Short>()
-//        d.put("memory", memory)
-//        return d
-//    }
+    fun coreDump(): HashMap<String, Any> {
+        val d = HashMap<String, Any>()
+        val integer = HashMap<Int, Number>()
+        val floating = HashMap<Int, Decimal>()
+        for (i in 1 until 32) {
+            integer[i] = this.getReg(i)
+            floating[i] = this.getFReg(i)
+        }
+        val registers = HashMap<String, Any>()
+        registers["integer"] = integer
+        registers["floating"] = floating
+        d["registers"] = registers
+        d["memory"] = this.state.mem.dump()
+        return d
+    }
 }
-//
+
 // data class CoreDump(
 //        var time: String,
 //        var regisers: CoreDumpRegisters,

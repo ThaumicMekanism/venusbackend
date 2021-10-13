@@ -104,4 +104,8 @@ class Memory {
         storeWord(addr, value)
         storeWord(addr + 4, value shr 32)
     }
+
+    fun dump(): Map<Long, Int> {
+        return memory.mapValues { it.value.toUByte().toInt() }
+    }
 }
