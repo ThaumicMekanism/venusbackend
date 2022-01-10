@@ -10,13 +10,14 @@ import venusbackend.riscv.insts.dsl.parsers.checkArgsLength
 import venusbackend.riscv.insts.dsl.parsers.regNameToNumber
 
 object CSRTypeParser : InstructionParser {
-    const val I_TYPE_MIN = -2048
-    const val I_TYPE_MAX = 2047
+    //const val I_TYPE_MIN = -2048
+    //const val I_TYPE_MAX = 2047
     override operator fun invoke(prog: Program, mcode: MachineCode, args: List<String>, dbg: DebugInfo) {
         checkArgsLength(args.size, 3, dbg)
 
         mcode[InstructionField.RD] = regNameToNumber(args[0], dbg = dbg)
         mcode[InstructionField.RS1] = regNameToNumber(args[2], dbg = dbg)
-        mcode[InstructionField.IMM_11_0] = getImmediate(args[1], CSRTypeParser.I_TYPE_MIN, CSRTypeParser.I_TYPE_MAX, dbg)
+        //mcode[InstructionField.IMM_11_0] = getImmediate(args[1], CSRTypeParser.I_TYPE_MIN, CSRTypeParser.I_TYPE_MAX, dbg)
+        mcode[InstructionField.CSR] = regNameToNumber(args[1], dbg = dbg)
     }
 }

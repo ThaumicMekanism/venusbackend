@@ -176,6 +176,112 @@ open class Simulator(
         }
     }
 
+    /*
+        Common Trap Handling part
+
+        From: Volume I: RISC-V Unprivileged ISA V20191213
+
+        1.6 Exceptions, Traps, and Interrupts
+            We use the term EXCEPTION to refer to an unusual condition occurring at run time associated with
+            an instruction in the current RISC-V hart. 
+            We use the term INTERRUPT to refer to an external asynchronous event that may cause a RISC-V hart 
+            to experience an unexpected transfer of control.
+            We use the term TRAP to refer to the transfer of control to a trap handler caused by either an
+            exception or an interrupt.        
+     */
+    fun handleMachineCommonTrap() {
+        // Save current pc in mepc
+        setSReg(SpecialRegisters.MEPC.address, state.getPC())
+
+        // we don't need to set mpp bit in mstatus because we only have machine mode
+        // TODO: in the future it might be needed
+
+        // store previouse value of MIE to MPIE (Interrupt-Enable Stack)
+        val mieBit = getSReg(SpecialRegisters.MSTATUS.address) and 0x8
+        val maskForMpieBit = mieBit shl 4
+        setSReg(SpecialRegisters.MSTATUS.address, getSReg(SpecialRegisters.MSTATUS.address) or maskForMpieBit)
+
+        // set new PC according to mode found in lower 2 bit of MTVEC
+        val mtvec = getSReg(SpecialRegisters.MTVEC.address)
+        when (val mtvec2LSB = mtvec and 0x3) {
+            1 -> {
+                // Vectored mode
+                val mcode: MachineCode = getNextInstruction() // to get length of machine code (instruction)
+                state.setPC(getSReg(SpecialRegisters.MTVEC.address) + mcode.length * getSReg(SpecialRegisters.MCAUSE.address))
+            }
+            0 -> {
+                // Direct mode
+                state.setPC(getSReg(SpecialRegisters.MTVEC.address))
+            }
+            else -> {
+                throw SimulatorError("$mtvec2LSB is not a valid 'mtvec' MODE. You can only use 01 (vectored mode) or 00 (direct mode)")
+            }
+        }
+        // disable interrupts
+        val last3BitsOfMstatus = getSReg(SpecialRegisters.MSTATUS.address) and 0x7
+        setSReg(SpecialRegisters.MSTATUS.address, ((getSReg(SpecialRegisters.MSTATUS.address) shr 4) shl 4) or last3BitsOfMstatus)
+    }
+
+    /*
+        Asynchronous Event == Interrupt
+        Possible asynchronous events during M-mode execution:
+        -> software: set memory mapped register by one hart to interrupt another hart
+        -> timer: mtimercmp >= mtime
+        -> external: external interrupt raised by platform-level interrupt controller
+     */
+    fun handleMachineInterrupts() {
+        val mstatus = getSReg(SpecialRegisters.MSTATUS.address)
+        val mieBit = mstatus and 0x8
+        if (mieBit == 0) { // Interrupts are disabled
+            return
+        }
+        val mie = getSReg(SpecialRegisters.MIE.address)
+        if (mie == 0) { // all interrupts are disabled
+            return
+        }
+        val mip = getSReg(SpecialRegisters.MIP.address)
+        val meieBit = mie and 0x800 shr 11 // Machine external interrupt enable bit
+        val meipBit = mip and 0x800 shr 11 // Machine external interrupt pending bit
+        val mtieBit = mie and 0x80 shr 7   // Machine timer interrupt enable bit
+        val mtipBit = mip and 0x80 shr 7   // Machine timer interrupt pending bit
+        val msieBit = mie and 0x8 shr 3    // Machine software interrupt enable bit
+        val msipBit = mip and 0x8 shr 3    // Machine software interrupt pending bit
+        if ((meieBit != 0 && meipBit != 0) || (mtieBit != 0 && mtipBit != 0) || (msieBit != 0 && msipBit != 0)) {
+            // clear pending bit(s)
+            if (meipBit != 0) {
+                // clear meipBit
+                val newMip = getSReg(SpecialRegisters.MIP.address) and 0b011111111111 // change this mask if you add custom interrupt bit(s)
+                setSReg(SpecialRegisters.MIP.address, newMip)
+            }
+            if (mtipBit != 0) {
+                // clear mtipBit
+                val newMip = getSReg(SpecialRegisters.MIP.address) and 0b111101111111 // change this mask if you add custom interrupt bit(s)
+                setSReg(SpecialRegisters.MIP.address, newMip)
+            }
+            if (msipBit != 0) {
+                // clear msipBit
+                val newMip = getSReg(SpecialRegisters.MIP.address) and 0b111111110111 // change this mask if you add custom interrupt bit(s)
+                setSReg(SpecialRegisters.MIP.address, newMip)
+            }
+
+            handleMachineCommonTrap()
+        }
+    }
+
+    /*
+        Synchronous Event == Exception
+        Possible synchronous events during M-mode execution:
+        -> Access fault exceptions (e.g. attempt to store byte to ROM)
+        -> Breakpoint exceptions (e.g. ebreak)
+        -> Environment call exceptions (executing ecall instruction)
+        -> Illegal instruction exceptions
+        -> Misaligned adress exceptions 
+     */
+    fun handleMachineException() {
+        handleMachineCommonTrap()
+    }    
+    
+
     open fun step(plugins: List<SimulatorPlugin>): List<Diff> {
         val inst = getNextInstruction()
         val prevPC = getPC()
@@ -184,10 +290,14 @@ open class Simulator(
         return diffs
     }
 
-    open fun step(): List<Diff> {
+    open fun step(): List<Diff> {        
         if (settings.maxSteps >= 0 && cycles >= settings.maxSteps) {
-            throw ExceededAllowedCyclesError("Ran for more than the max allowed steps (${settings.maxSteps})!")
+            throw ExceededAllowedCyclesError("Run for more than the max allowed steps (${settings.maxSteps})!")
         }
+
+        // hook in to handle Machine Interrupts (asyn.), can change programm flow by overwriting the PC!
+        handleMachineInterrupts() 
+
         this.branched = false
         this.jumped = false
         this.ebreak = false
@@ -255,6 +365,38 @@ open class Simulator(
         }
     }
 
+    /*
+        TODO: not working yet!
+    */
+    fun runTimer() {
+        var counter = 0L
+        while (true) {
+            if (state.registerWidth == 32) {
+                if (counter == Int.MAX_VALUE.toLong()) {
+                    counter = 0
+                }
+            } else if (state.registerWidth == 64) {
+                if (counter == Long.MAX_VALUE) {
+                    counter = 0
+                }
+            }
+            // TODO: MO
+            //delay(timerFrequency)
+            counter++
+            state.setSReg(SpecialRegisters.MTIME.address, counter)
+            // check if cmp register is bigger than timer
+            val cmp = state.getSReg(SpecialRegisters.MTIMECMP.address)
+            if ((cmp != 0) && (cmp <= counter)) {
+                //val msg = Message()
+                //msg.slot = 7 // machine timer interrupt
+                // TODO: MO ... handle timer interrupt properly
+                //for(l in connection!!.getListeners()) {
+                //    l.interruptRequest(msg, state)
+                //}
+                state.setSReg(SpecialRegisters.MTIMECMP.address, 0)
+            }
+        }
+    }
     fun addArg(arg: String) {
         args.add(arg)
         removeAllArgsFromMem()
@@ -357,6 +499,15 @@ open class Simulator(
         preInstruction.add(RegisterDiff(id, getReg(id)))
         state.setReg(id, v)
         postInstruction.add(RegisterDiff(id, getReg(id)))
+    }
+
+    fun getSReg(id:Int) = state.getSReg(id)
+    fun getCsrReg(id:Int) = state.getSReg(id)
+
+    fun setSReg(id: Int, v: Number) = state.setSReg(id, v)
+    fun setCsrReg(id: Int, v: Number) = state.setSReg(id, v)
+    fun setCsrRegNoUndo(id: Int, v: Number) {
+        state.setSReg(id, v)
     }
 
     fun setRegNoUndo(id: Int, v: Number) {

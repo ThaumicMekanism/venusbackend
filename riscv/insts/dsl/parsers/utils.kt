@@ -2,6 +2,7 @@ package venusbackend.riscv.insts.dsl.parsers
 
 import venusbackend.assembler.AssemblerError
 import venusbackend.assembler.DebugInfo
+import venusbackend.simulator.SpecialRegisters
 
 internal fun checkArgsLength(argsSize: Int, required: Int, dbg: DebugInfo) {
     if (argsSize != required)
@@ -34,6 +35,10 @@ internal fun regNameToNumber(reg: String, integer: Boolean = true, dbg: DebugInf
             return ret
         }
         throw AssemblerError("register $reg not recognized", dbg)
+    }
+    val CSR = checkCSR(reg)
+    if (CSR != null) {
+        return CSR
     }
     try {
         if (integer) {
@@ -125,5 +130,24 @@ fun checkFloating(reg: String, dbg: DebugInfo): Int {
         "ft10" -> 30
         "ft11" -> 31
         else -> throw AssemblerError("register $reg not recognized", dbg)
+    }
+}
+fun checkCSR(reg: String): Int? {
+    /*
+        TODO:
+        -> optimize to make more flexible (loop over instead of hard code enums)
+     */
+    return when(reg) {
+        SpecialRegisters.MSTATUS.regName -> SpecialRegisters.MSTATUS.address
+        SpecialRegisters.MIE.regName -> SpecialRegisters.MIE.address
+        SpecialRegisters.MTVEC.regName -> SpecialRegisters.MTVEC.address
+        SpecialRegisters.MSCRATCH.regName -> SpecialRegisters.MSCRATCH.address
+        SpecialRegisters.MEPC.regName -> SpecialRegisters.MEPC.address
+        SpecialRegisters.MCAUSE.regName -> SpecialRegisters.MCAUSE.address
+        SpecialRegisters.MTVAL.regName -> SpecialRegisters.MTVAL.address
+        SpecialRegisters.MIP.regName -> SpecialRegisters.MIP.address
+        SpecialRegisters.MTIME.regName -> SpecialRegisters.MTIME.address
+        SpecialRegisters.MTIMECMP.regName -> SpecialRegisters.MTIMECMP.address
+        else -> null
     }
 }

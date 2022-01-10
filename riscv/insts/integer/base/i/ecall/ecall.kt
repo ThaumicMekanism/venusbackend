@@ -1,4 +1,4 @@
- package venusbackend.riscv.insts.integer.base.i.ecall
+package venusbackend.riscv.insts.integer.base.i.ecall
 
 import venus.Renderer
 import venusbackend.*
@@ -16,6 +16,7 @@ import venusbackend.riscv.insts.dsl.parsers.DoNothingParser
 import venusbackend.riscv.MemorySegments
 import venusbackend.simulator.FilesHandler
 import venusbackend.simulator.Simulator
+import venusbackend.simulator.SpecialRegisters
 import kotlin.js.JSON
 import kotlin.js.Json
 import kotlin.js.json
@@ -48,14 +49,24 @@ val ecall = Instruction(
                 34 -> printHex(sim)
                 0x3CC -> clib(sim)
                 else -> {
+                    var handlerFound = false
                     if (sim.hasEcallReceiver()) {
+                        handlerFound = true
                         sendECallJson(whichCall.toInt(), sim)
-                    } else {
+                    } 
+
+                    if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
+                        handlerFound = true			            
+                        sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
+                        sim.handleMachineException()
+		            }
+                    
+                    if(!handlerFound) {
                         Renderer.printConsole("Invalid ecall $whichCall")
                     }
                 }
             }
-            if (!(whichCall == 10 || whichCall == 17)) {
+            if (!(whichCall == 10 || whichCall == 17 || forwardEcallToAsmCode(whichCall.toInt()))) {
                 sim.incrementPC(mcode.length)
             }
         },
@@ -78,15 +89,24 @@ val ecall = Instruction(
                 20L -> ferror(sim)
                 34L -> printHex(sim)
                 else -> {
+                    var handlerFound = false
                     if (sim.hasEcallReceiver()) {
+                        handlerFound = true
                         sendECallJson(whichCall.toInt(), sim)
-                    } else {
+                    } 
+
+                    if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
+                        handlerFound = true			            
+                        sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
+                        sim.handleMachineException()
+		            }
+                    
+                    if(!handlerFound) {
                         Renderer.printConsole("Invalid ecall $whichCall")
-                    }
+                    }                    
                 }
             }
-            sendECallJson(whichCall.toInt(), sim)
-            if (!(whichCall == 10L || whichCall == 17L)) {
+            if (!(whichCall == 10L || whichCall == 17L  || forwardEcallToAsmCode(whichCall.toInt()))) {
                 sim.incrementPC(mcode.length)
             }
         },
@@ -109,15 +129,24 @@ val ecall = Instruction(
                 QuadWord(20) -> ferror(sim)
                 QuadWord(34) -> printHex(sim)
                 else -> {
+                    var handlerFound = false
                     if (sim.hasEcallReceiver()) {
+                        handlerFound = true
                         sendECallJson(whichCall.toInt(), sim)
-                    } else {
+                    } 
+
+                    if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
+                        handlerFound = true			            
+                        sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
+                        sim.handleMachineException()
+		            }
+                    
+                    if(!handlerFound) {
                         Renderer.printConsole("Invalid ecall $whichCall")
-                    }
+                    }                    
                 }
             }
-            sendECallJson(whichCall.toInt(), sim)
-            if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17))) {
+            if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17) || forwardEcallToAsmCode(whichCall.toInt()))) {
                 sim.incrementPC(mcode.length)
             }
         },
@@ -140,6 +169,13 @@ enum class Syscall(val syscall: Int) {
     FEOF(19),
     FERROR(20),
     PRINT_HEX(34)
+}
+
+private fun forwardEcallToAsmCode(id: Int): Boolean {
+    /*
+        TODO: create configuration for this range (do not hardcode it here!)
+     */
+     return ((id >= 0x200) && (id < 0x300))
 }
 
 private fun sendECallJson(id: Int, sim: Simulator) {
