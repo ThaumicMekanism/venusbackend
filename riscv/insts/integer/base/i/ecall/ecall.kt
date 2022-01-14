@@ -31,6 +31,7 @@ val ecall = Instruction(
         impl16 = NoImplementation,
         impl32 = RawImplementation { mcode, sim ->
             val whichCall = sim.getReg(Registers.a0)
+            var handlerFound = true
             when (whichCall) {
                 1 -> printInteger(sim)
                 4 -> printString(sim)
@@ -49,23 +50,24 @@ val ecall = Instruction(
                 34 -> printHex(sim)
                 0x3CC -> clib(sim)
                 else -> {
-                    var handlerFound = false
-                    if (sim.hasEcallReceiver()) {
-                        handlerFound = true
-                        sendECallJson(whichCall.toInt(), sim)
-                    } 
-
-                    if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
-                        handlerFound = true			            
-                        sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
-                        sim.handleMachineException()
-		            }
-                    
-                    if(!handlerFound) {
-                        Renderer.printConsole("Invalid ecall $whichCall")
-                    }
+                    handlerFound = false
                 }
             }
+            
+            if (sim.hasEcallReceiver()) {
+                handlerFound = true
+                sendECallJson(whichCall.toInt(), sim)
+            } 
+
+            if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
+                handlerFound = true			            
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
+                sim.handleMachineException()
+            }
+            
+            if(!handlerFound) {
+                Renderer.printConsole("Invalid ecall $whichCall")
+            }            
             if (!(whichCall == 10 || whichCall == 17 || forwardEcallToAsmCode(whichCall.toInt()))) {
                 sim.incrementPC(mcode.length)
             }
