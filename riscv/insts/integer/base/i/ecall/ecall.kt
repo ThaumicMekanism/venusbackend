@@ -55,8 +55,7 @@ val ecall = Instruction(
             }
             
             if (sim.hasEcallReceiver()) {
-                handlerFound = true
-                sendECallJson(whichCall.toInt(), sim)
+                handlerFound = handlerFound || sendECallJson(whichCall.toInt(), sim)
             } 
 
             if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
@@ -66,14 +65,19 @@ val ecall = Instruction(
             }
             
             if(!handlerFound) {
-                Renderer.printConsole("Invalid ecall $whichCall")
-            }            
-            if (!(whichCall == 10 || whichCall == 17 || forwardEcallToAsmCode(whichCall.toInt()))) {
+                Renderer.printConsole("\nError, invalid ecall id: $whichCall\n")
+                // exit with error code -1
+                sim.setPC(MemorySegments.STATIC_BEGIN)
+                sim.exitcode = -1
+            }  
+
+            if (!(whichCall == 10 || whichCall == 17 || forwardEcallToAsmCode(whichCall.toInt()) || !handlerFound)) {
                 sim.incrementPC(mcode.length)
             }
         },
         impl64 = RawImplementation { mcode, sim ->
             val whichCall = sim.getReg(10).toLong()
+            var handlerFound = true
             when (whichCall) {
                 1L -> printInteger(sim)
                 4L -> printString(sim)
@@ -91,29 +95,34 @@ val ecall = Instruction(
                 20L -> ferror(sim)
                 34L -> printHex(sim)
                 else -> {
-                    var handlerFound = false
-                    if (sim.hasEcallReceiver()) {
-                        handlerFound = true
-                        sendECallJson(whichCall.toInt(), sim)
-                    } 
-
-                    if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
-                        handlerFound = true			            
-                        sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
-                        sim.handleMachineException()
-		            }
-                    
-                    if(!handlerFound) {
-                        Renderer.printConsole("Invalid ecall $whichCall")
-                    }                    
+                    handlerFound = false
                 }
             }
-            if (!(whichCall == 10L || whichCall == 17L  || forwardEcallToAsmCode(whichCall.toInt()))) {
+            
+            if (sim.hasEcallReceiver()) {
+                handlerFound = handlerFound || sendECallJson(whichCall.toInt(), sim)
+            } 
+
+            if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
+                handlerFound = true			            
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
+                sim.handleMachineException()
+            }
+            
+            if(!handlerFound) {
+                Renderer.printConsole("\nError, invalid ecall id: $whichCall\n")
+                // exit with error code -1
+                sim.setPC(MemorySegments.STATIC_BEGIN)
+                sim.exitcode = -1
+            } 
+
+            if (!(whichCall == 10L || whichCall == 17L  || forwardEcallToAsmCode(whichCall.toInt()) || !handlerFound)) {
                 sim.incrementPC(mcode.length)
             }
         },
         impl128 = RawImplementation { mcode, sim ->
             val whichCall = sim.getReg(10).toQuadWord()
+            var handlerFound = true
             when (whichCall) {
                 QuadWord(1) -> printInteger(sim)
                 QuadWord(4) -> printString(sim)
@@ -131,24 +140,28 @@ val ecall = Instruction(
                 QuadWord(20) -> ferror(sim)
                 QuadWord(34) -> printHex(sim)
                 else -> {
-                    var handlerFound = false
-                    if (sim.hasEcallReceiver()) {
-                        handlerFound = true
-                        sendECallJson(whichCall.toInt(), sim)
-                    } 
-
-                    if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
-                        handlerFound = true			            
-                        sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
-                        sim.handleMachineException()
-		            }
-                    
-                    if(!handlerFound) {
-                        Renderer.printConsole("Invalid ecall $whichCall")
-                    }                    
+                    handlerFound = false
                 }
             }
-            if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17) || forwardEcallToAsmCode(whichCall.toInt()))) {
+            
+            if (sim.hasEcallReceiver()) {
+                handlerFound = handlerFound || sendECallJson(whichCall.toInt(), sim)
+            } 
+
+            if ( forwardEcallToAsmCode(whichCall.toInt()) ) {
+                handlerFound = true			            
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 11) // Environment call from M-mode
+                sim.handleMachineException()
+            }
+            
+            if(!handlerFound) {
+                Renderer.printConsole("\nError, invalid ecall id: $whichCall\n")
+                // exit with error code -1
+                sim.setPC(MemorySegments.STATIC_BEGIN)
+                sim.exitcode = -1
+            }            
+            
+            if (!(whichCall == QuadWord(10) || whichCall == QuadWord(17) || forwardEcallToAsmCode(whichCall.toInt()) || !handlerFound)) {
                 sim.incrementPC(mcode.length)
             }
         },
@@ -180,7 +193,7 @@ private fun forwardEcallToAsmCode(id: Int): Boolean {
      return ((id >= 0x200) && (id < 0x300))
 }
 
-private fun sendECallJson(id: Int, sim: Simulator) {
+private fun sendECallJson(id: Int, sim: Simulator): Boolean {
     val jsonstr = sim.sendECallJson(createJson(id, getParamsJson(id, sim)))
     if (jsonstr != null) {
         val jsonobj: Json = JSON.parse(jsonstr)
@@ -190,6 +203,17 @@ private fun sendECallJson(id: Int, sim: Simulator) {
 
         if (a0 is Int) sim.setReg(10, a0)
         if (a1 is Int) sim.setReg(11, a1)
+
+        val handlerFound: Any? = jsonobj.get("handlerFound")
+        if (handlerFound is Boolean) {
+            return handlerFound
+        }
+        else {
+            return false
+        }
+    }
+    else {
+        return false
     }
 }
 
@@ -392,8 +416,8 @@ private fun exitWithCode(sim: Simulator) {
     sim.setPC(MemorySegments.STATIC_BEGIN)
     val retVal = sim.getReg(11)
     sim.exitcode = retVal.toInt()
-    sim.ecallMsg = "\nExited with error code $retVal"
-    Renderer.printConsole("\nExited with error code $retVal\n")
+    //sim.ecallMsg = "\nExited with error code $retVal\n"
+    //Renderer.printConsole("\nExited with error code $retVal\n")
 }
 
 private fun memdump(sim: Simulator) {
