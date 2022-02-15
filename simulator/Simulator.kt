@@ -45,6 +45,8 @@ open class Simulator(
 
     val plugins = LinkedHashMap<String, SimulatorPlugin>()
 
+    var trapEntry = false
+
     init {
         (state).getReg(1)
         var i = 0
@@ -190,6 +192,9 @@ open class Simulator(
             exception or an interrupt.        
      */
     fun handleMachineCommonTrap() {
+        // store event entering a trap => used to correctly handle the caller-stack in vscode
+        trapEntry = true
+
         // Save current pc in mepc
         setSReg(SpecialRegisters.MEPC.address, state.getPC())
 
@@ -223,6 +228,18 @@ open class Simulator(
         // disable interrupts
         val last3BitsOfMstatus = getSReg(SpecialRegisters.MSTATUS.address) and 0x7
         setSReg(SpecialRegisters.MSTATUS.address, ((getSReg(SpecialRegisters.MSTATUS.address) shr 4) shl 4) or last3BitsOfMstatus)
+    }
+
+    /**
+     * returns Trap-Entry Status and cleares it
+     */
+    fun isTrapEntry(): Boolean {
+        if (trapEntry == true) {
+            trapEntry = false
+            return true
+        } else {
+            return false
+        }
     }
 
     /*
