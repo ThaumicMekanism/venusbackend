@@ -9,13 +9,14 @@ import venusbackend.riscv.insts.dsl.formats.InstructionFormat
 import venusbackend.riscv.insts.dsl.impls.NoImplementation
 import venusbackend.riscv.insts.dsl.impls.RawImplementation
 import venusbackend.riscv.insts.dsl.parsers.base.CSRITypeParser
+import venusbackend.simulator.SpecialRegisters
 
 /*
     TODO: 
     -> avoid side effects in case rd == x0 [Table 9.1 in "Volume I: RISC-V Unprivileged ISA V20191213"]
  */
 val csrrwi = Instruction(
-        name = "csrrwi",
+        name = "csrrwi", // Atomic Read/Write immediate CSR
         format = InstructionFormat(4,
                 listOf(
                         FieldEqual(InstructionField.OPCODE, 0b1110011),
@@ -27,16 +28,56 @@ val csrrwi = Instruction(
         impl32 = RawImplementation { mcode, sim ->
             val imm = mcode[InstructionField.RS1].toInt()
             val vcsr = sim.getSReg(mcode[InstructionField.CSR]).toInt()
-            sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
-            sim.setSReg(mcode[InstructionField.CSR], imm)
-            sim.incrementPC(mcode.length)
+
+            // get csr[11:10] => read/write or read-only
+            val rw_ro = (mcode[InstructionField.CSR].toInt() ushr 10) and 0x3
+            // get csr[9:8] => lowest privilege level that can access the CSR
+            val accessPrivLevel = (mcode[InstructionField.CSR].toInt() ushr 8) and 0x3
+
+            // check if the CSR has read/write
+            if( rw_ro == 0x3) {
+                // CSR is read-only => exception!
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 1) // exception code: 'Instruction access fault'
+                sim.handleMachineException()
+            }
+            // check if current PRIV level allows CSR access
+            else if( sim.getPRIV().toInt() < accessPrivLevel ) {
+                // CSR does not allow access in current priv level
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 2) // exception code: 'illegal instruction'
+                sim.handleMachineException()
+            }
+            else {
+                sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
+                sim.setSReg(mcode[InstructionField.CSR], imm)
+                sim.incrementPC(mcode.length)
+            }
         },
         impl64 = RawImplementation { mcode, sim ->
             val imm = mcode[InstructionField.RS1].toLong()
             val vcsr = sim.getSReg(mcode[InstructionField.CSR]).toLong()
-            sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
-            sim.setSReg(mcode[InstructionField.CSR], imm)
-            sim.incrementPC(mcode.length)
+
+            // get csr[11:10] => read/write or read-only
+            val rw_ro = ((mcode[InstructionField.CSR].toInt() ushr 10) and 0x3).toInt()
+            // get csr[9:8] => lowest privilege level that can access the CSR
+            val accessPrivLevel = ((mcode[InstructionField.CSR].toInt() ushr 8) and 0x3).toInt()
+
+            // check if the CSR has read/write
+            if( rw_ro == 0x3) {
+                // CSR is read-only => exception!
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 1) // exception code: 'Instruction access fault'
+                sim.handleMachineException()
+            }
+            // check if current PRIV level allows CSR access
+            else if( sim.getPRIV().toInt() < accessPrivLevel ) {
+                // CSR does not allow access in current priv level
+                sim.setSReg(SpecialRegisters.MCAUSE.address, 2) // exception code: 'illegal instruction'
+                sim.handleMachineException()
+            }
+            else {
+                sim.setReg(mcode[InstructionField.RD].toInt(), vcsr)
+                sim.setSReg(mcode[InstructionField.CSR], imm)
+                sim.incrementPC(mcode.length)
+            }
         },
         impl128 = RawImplementation { mcode, sim ->
             val imm = mcode[InstructionField.RS1].toQuadWord()

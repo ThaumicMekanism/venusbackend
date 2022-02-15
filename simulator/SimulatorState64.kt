@@ -10,30 +10,18 @@ class SimulatorState64 : SimulatorState {
     private val fregs = Array(33) { Decimal() }
     private var pc: Long = 0
     private var maxpc: Long = MemorySegments.TEXT_BEGIN.toLong()
-    private var heapEnd = MemorySegments.HEAP_BEGIN.toLong()
+    private var heapEnd = MemorySegments.HEAP_BEGIN.toLong()    
 
     override val registerWidth = 64
     override var mem = Memory()
     override var cache = CacheHandler(1)
 
     private val sregs64 = mutableMapOf<Int, CSR64>()
+    private var priv: Int = 3 /* RISC-V privilege level the hart is running with [0 = user/application = U; 1 = Supervisor = S; 2 = Reserved; 3 = Machine = M ] */    
     init {
         /**
          * Add CSRs here. Take the number from the "Currently allocated RISC-V x-level CSR addresses" table
          */
-         /*
-            spcified in: SimulatorState.kt
-                MSTATUS(0x300, "mstatus"),
-                MIE(0x304, "mie"),
-                MTVEC(0x305, "mtvec"),
-                MSCRATCH(0x340, "mscratch"),
-                MEPC(0x341, "mepc"),
-                MCAUSE(0x342, "mcause"),
-                MTVAL(0x343, "mtval"),
-                MIP(0x344, "mip"),
-                MTIME(0x701, "mtime"),
-                MTIMECMP(0x321, "mtimecmp")
-          */
         sregs64[SpecialRegisters.MSTATUS.address] = CSR64(0, SpecialRegisterRights.MRW) // mstatus CSR
         sregs64[SpecialRegisters.MIE.address] = CSR64(0, SpecialRegisterRights.MRW) // mie CSR
         sregs64[SpecialRegisters.MIP.address] = CSR64(0, SpecialRegisterRights.MRW) // mip CSR
@@ -43,7 +31,9 @@ class SimulatorState64 : SimulatorState {
         sregs64[SpecialRegisters.MTIME.address] = CSR64(0, SpecialRegisterRights.MRW)
         sregs64[SpecialRegisters.MTIMECMP.address] = CSR64(0, SpecialRegisterRights.MRW)
         sregs64[SpecialRegisters.MSCRATCH.address] = CSR64(0, SpecialRegisterRights.MRW)
-        sregs64[SpecialRegisters.MTVAL.address] = CSR64(0, SpecialRegisterRights.MRW) 
+        sregs64[SpecialRegisters.MTVAL.address] = CSR64(0, SpecialRegisterRights.MRW)
+
+        this.priv = 3; /* start in M-mode */ 
     }
 
     override fun setCacheHandler(ch: CacheHandler) {
@@ -71,24 +61,23 @@ class SimulatorState64 : SimulatorState {
     override fun setReg(i: Int, v: Number) { if (i != 0) regs64[i] = v.toLong() }
     override fun getFReg(i: Int) = fregs[i]
     override fun setFReg(i: Int, v: Decimal) { fregs[i] = v }
+    
     override fun getSReg(i: Int): Number {
-        //semaphore64.acquire()
         val result: Long
-        //withContext(context64) {
-            result = sregs64[i]!!.content
-        //}
-        //semaphore64.release()
+        result = sregs64[i]!!.content
         return result
     }
-
     override fun setSReg(i: Int, v: Number) {
-        //semaphore64.acquire()
         if (sregs64[i]!!.specialRegisterRights == SpecialRegisterRights.MRW) { // Checking just machine Read/Write privilege because we only have machine mode
-            //withContext(context64) {
-                sregs64[i]!!.content = v.toLong()
-            //}
+            sregs64[i]!!.content = v.toLong()
         }
-        //semaphore64.release()
+    }
+
+    override fun setPRIV(newPriv: Int) {
+        this.priv = newPriv and 0x3 // modulo 3
+    }
+    override fun getPRIV(): Int {
+        return this.priv
     }
 
     override fun getHeapEnd(): Number {
@@ -105,6 +94,8 @@ class SimulatorState64 : SimulatorState {
 
     override fun reset() {
         this.cache.reset()
+
+        this.priv = 3; /* start in M-mode */
     }
     private data class CSR64(var content: Long, val specialRegisterRights: SpecialRegisterRights)
 }

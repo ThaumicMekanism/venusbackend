@@ -193,8 +193,11 @@ open class Simulator(
         // Save current pc in mepc
         setSReg(SpecialRegisters.MEPC.address, state.getPC())
 
-        // we don't need to set mpp bit in mstatus because we only have machine mode
-        // TODO: in the future it might be needed
+        // store previouse value of PRIV to MPP (entering M-mode) and set PRIV to M-Mode
+        val newMPP = getPRIV() shl 11
+        val mstatus = (getSReg(SpecialRegisters.MSTATUS.address) and 0xFFFE7FFF) or newMPP
+        setSReg(SpecialRegisters.MSTATUS.address, mstatus)
+        setPRIV(3) // set M-mode
 
         // store previouse value of MIE to MPIE (Interrupt-Enable Stack)
         val mieBit = getSReg(SpecialRegisters.MSTATUS.address) and 0x8
@@ -525,6 +528,9 @@ open class Simulator(
     fun setFRegNoUndo(id: Int, v: Decimal) {
         state.setFReg(id, v)
     }
+
+    fun getPRIV() = state.getPRIV()
+    fun setPRIV(v: Int) = state.setPRIV(v)
 
     fun toggleBreakpointAt(idx: Int): Boolean {
 //        breakpoints[idx] = !breakpoints[idx]

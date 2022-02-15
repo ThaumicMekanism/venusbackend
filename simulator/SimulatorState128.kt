@@ -42,12 +42,20 @@ class SimulatorState128 : SimulatorState {
     override fun setReg(i: Int, v: Number) { if (i != 0) regs128[i] = v.toQuadWord() }
     override fun getFReg(i: Int) = fregs[i]
     override fun setFReg(i: Int, v: Decimal) { fregs[i] = v }
+
     override fun getSReg(i: Int): Number {
         return 0
         // TODO("Not yet implemented")
     }
-
     override fun setSReg(i: Int, v: Number) {
+        // TODO("Not yet implemented")
+    }
+
+    override fun setPRIV(newPriv: Int) {
+        // TODO("Not yet implemented")
+    }
+    override fun getPRIV(): Int {
+        return 0
         // TODO("Not yet implemented")
     }
 
