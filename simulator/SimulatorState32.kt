@@ -11,6 +11,28 @@ class SimulatorState32 : SimulatorState {
     private var pc: Int = 0
     private var maxpc: Int = MemorySegments.TEXT_BEGIN
     private var heapEnd = MemorySegments.HEAP_BEGIN
+    private val sregs32 = mutableMapOf<Int, CSR32>()
+    private var priv: Int = 3 /* RISC-V privilege level the hart is running with [0 = user/application = U; 1 = Supervisor = S; 2 = Reserved; 3 = Machine = M ] */    
+    init {
+        /**
+         * Add CSRs here. Take the number from the "Currently allocated RISC-V x-level CSR addresses" table
+         */
+          /*
+            TODO: make more robust (e.g. loop over enum)!
+           */
+        sregs32[SpecialRegisters.MSTATUS.address] = CSR32(0, SpecialRegisterRights.MRW) // mstatus CSR
+        sregs32[SpecialRegisters.MIE.address] = CSR32(0, SpecialRegisterRights.MRW) // mie CSR
+        sregs32[SpecialRegisters.MIP.address] = CSR32(0, SpecialRegisterRights.MRW) // mip CSR
+        sregs32[SpecialRegisters.MEPC.address] = CSR32(0, SpecialRegisterRights.MRW) // mepc CSR
+        sregs32[SpecialRegisters.MCAUSE.address] = CSR32(0, SpecialRegisterRights.MRW) // mcause CSR
+        sregs32[SpecialRegisters.MTVEC.address] = CSR32(0, SpecialRegisterRights.MRW) // mtvec CSR
+        sregs32[SpecialRegisters.MTIME.address] = CSR32(0, SpecialRegisterRights.MRW)
+        sregs32[SpecialRegisters.MTIMECMP.address] = CSR32(0, SpecialRegisterRights.MRW)
+        sregs32[SpecialRegisters.MSCRATCH.address] = CSR32(0, SpecialRegisterRights.MRW)
+        sregs32[SpecialRegisters.MTVAL.address] = CSR32(0, SpecialRegisterRights.MRW)
+
+        this.priv = 3; /* start in M-mode */
+    }
 
     override val registerWidth = 32
     override var mem = Memory()
@@ -40,6 +62,25 @@ class SimulatorState32 : SimulatorState {
     override fun setReg(i: Int, v: Number) { if (i != 0) regs32[i] = v.toInt() }
     override fun getFReg(i: Int) = fregs[i]
     override fun setFReg(i: Int, v: Decimal) { fregs[i] = v }
+
+    override fun getSReg(i: Int): Number {
+        val result : Int
+        result = sregs32[i]!!.content
+        return result
+    }
+    override fun setSReg(i: Int, v: Number) {
+        if (sregs32[i]!!.specialRegisterRights == SpecialRegisterRights.MRW) { // Checking just machine Read/Write privilege because we only have machine mode
+            sregs32[i]!!.content = v.toInt()
+        }
+    }
+
+    override fun setPRIV(newPriv: Int) {
+        this.priv = newPriv and 0x3 // modulo 3
+    }
+    override fun getPRIV(): Int {
+        return this.priv
+    }    
+
     override fun getHeapEnd(): Number {
         return heapEnd
     }
@@ -54,5 +95,7 @@ class SimulatorState32 : SimulatorState {
 
     override fun reset() {
         this.cache.reset()
+        this.priv = 3; /* start in M-mode */
     }
+    private data class CSR32(var content: Int, val specialRegisterRights: SpecialRegisterRights)
 }

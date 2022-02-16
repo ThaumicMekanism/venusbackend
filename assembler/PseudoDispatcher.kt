@@ -61,6 +61,14 @@ enum class PseudoDispatcher(val pw: PseudoWriter) {
     flw(Load),
     fld(Load),
     fsw(Store),
-    fsd(Store)
+    fsd(Store),
+    /* CSR */
+    csrr(CSRR),
+    csrw(CSRW),
+    csrs(CSRS),
+    csrc(CSRC),
+    csrwi(CSRWI),
+    csrsi(CSRSI),
+    csrci(CSRCI)
     ;
 }
